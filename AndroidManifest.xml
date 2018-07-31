@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="io.brahmaos.wallet.brahmawallet">
+
+    <!-- basics -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <uses-sdk android:minSdkVersion="27" android:targetSdkVersion="27"></uses-sdk>
+
+    <application
+        android:name=".WalletApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_logo"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:roundIcon="@mipmap/ic_logo_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <!-- application spec -->
+        <receiver android:name=".receiver.InstallReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+                <action android:name="android.intent.action.DOWNLOAD_NOTIFICATION_CLICKED" />
+            </intent-filter>
+        </receiver>
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="io.brahmaos.wallet.brahmawallet.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity android:name=".ui.SplashActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ui.account.CreateAccountActivity"
+            android:label="@string/title_activity_create_account" />
+        <activity
+            android:name=".ui.MainActivity"
+            android:launchMode="singleTask" />
+        <activity android:name=".ui.account.AccountsActivity" />
+        <activity
+            android:name=".ui.account.ImportAccountActivity"
+            android:label="@string/title_activity_import_account"
+            android:theme="@style/AppTheme" />
+        <activity android:name=".ui.token.TokensActivity" />
+        <activity
+            android:name=".ui.account.AccountAssetsActivity"
+            android:label="@string/title_activity_account_detail"
+            android:theme="@style/AppTheme" />
+        <activity
+            android:name=".ui.transfer.TransferActivity"
+            android:label="@string/title_activity_transfer"
+            android:theme="@style/AppTheme" />
+        <activity android:name=".ui.account.AccountDetailActivity" />
+        <activity android:name=".ui.account.ChangeAccountNameActivity" />
+        <activity
+            android:name=".ui.account.AccountChangePasswordActivity"
+            android:label="@string/title_activity_account_change_password" />
+        <activity
+            android:name=".ui.setting.SettingsActivity"
+            android:label="@string/title_activity_settings" />
+        <activity android:name=".ui.account.AddressQrcodeActivity" />
+        <activity android:name=".ui.common.barcode.CaptureActivity" />
+        <activity
+            android:name=".ui.account.AccountBackupActivity"
+            android:label="@string/title_activity_account_backup"
+            android:theme="@style/AppTheme" />
+        <activity android:name=".ui.token.TokenSearchActivity" />
+        <activity
+            android:name=".ui.setting.AboutActivity"
+            android:label="@string/title_activity_about"
+            android:theme="@style/AppTheme" />
+        <activity
+            android:name=".ui.setting.PrivacyPolicyActivity"
+            android:label="@string/title_activity_privacy_policy"
+            android:theme="@style/AppTheme" />
+        <activity android:name=".ui.contact.ContactsActivity" />
+        <activity
+            android:name=".ui.contact.AddContactActivity"
+            android:label="@string/title_add_contact"
+            android:theme="@style/AppTheme" />
+        <activity android:name=".ui.contact.ChooseContactActivity" />
+        <activity android:name=".ui.contact.ContactDetailActivity" />
+        <activity android:name=".ui.contact.EditContactActivity" />
+        <activity android:name=".ui.setting.ServiceTermsActivity" />
+        <activity android:name=".ui.account.MnemonicBackupActivity" />
+        <activity android:name=".ui.account.ConfirmMnemonicActivity" />
+        <activity android:name=".ui.account.BackupKeystoreActivity" />
+        <activity
+            android:name=".ui.FingerActivity"
+            android:launchMode="singleInstance"
+            android:theme="@style/FadeTheme" />
+        <activity android:name=".ui.transfer.InstantExchangeActivity"/>
+    </application>
+
+</manifest>

@@ -1,0 +1,344 @@
+<resources>
+    <string name="app_name">梵钱包</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">确认</string>
+    <string name="quit">退出</string>
+    <string name="ok">好的</string>
+    <string name="copy">复制</string>
+    <string name="delete">删除</string>
+    <string name="unit_cny">CNY</string>
+    <string name="unit_usd">USD</string>
+
+    <string name="title_brahma_wallet">梵钱包</string>
+    <string name="brahma_wallet_desc">您的数字智能钱包</string>
+    <string name="title_activity_create_account">创建账号</string>
+    <string name="total_assets">总资产</string>
+    <string name="assets_class">资产类别</string>
+    <string name="asymptotic">≈</string>
+    <string name="blank_space">&#160;</string>
+    <string name="error_network">网络异常!</string>
+
+    <string name="action_next">下一步</string>
+    <string name="action_confirm">确认</string>
+    <string name="action_finish">完成</string>
+    <string name="action_add">新增</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_delete">删除</string>
+    <string name="dialog_title_upgrade_prompt">更新提示</string>
+
+    <!-- Drawer menu -->
+    <string name="nav_menu_other">其余</string>
+    <string name="nav_menu_setting">设置</string>
+    <string name="nav_menu_help">帮助</string>
+    <string name="nav_menu_info">关于</string>
+
+    <!-- Strings related to dialog -->
+    <string name="dialog_title_quit_import">退出导入?</string>
+    <string name="dialog_content_quit_import">  </string>
+
+    <!-- Strings related to accounts -->
+    <string name="title_accounts">账号</string>
+    <string name="title_account_assets">账号资产</string>
+    <string name="title_account_detail">账号详情</string>
+    <string name="title_account_change_name">更改账号名</string>
+    <string name="title_account_change_password">更改密码</string>
+    <string name="action_copy_address">复制地址</string>
+    <string name="title_dialog_export_keystore">导出Keystore</string>
+    <string name="title_dialog_export_private_key">导出私钥</string>
+
+    <string name="export_keystore_tip_1">
+        离线保存，复制Keystore文件到安全、离线的地方保存。切勿保存到邮箱、网盘、聊天工具等，非常危险。
+    </string>
+    <string name="export_keystore_tip_2">
+        请勿通过网络工具传输Keystore文件。建议离线设备通过扫描二维码的方式传输。
+    </string>
+    <string name="export_keystore_tip_3">
+        请勿截图。勿用截图或拍照的方式保存keystore文件。
+    </string>
+    <string name="keystore_qrcode_title_1">
+        仅供直接扫描
+    </string>
+    <string name="keystore_qrcode_tip_1">
+        二维码禁止保存、截图、拍照。仅供用户在安全环境下直接扫描来方便的导入钱包。
+    </string>
+    <string name="keystore_qrcode_title_2">
+        在安全环境下使用
+    </string>
+    <string name="keystore_qrcode_tip_2">
+        请在确保四周无人以及没有摄像头的情况下使用。二维码一旦被他人获取将造成不可挽回的损失。
+    </string>
+    <string name="export_private_key_tip_1">
+        安全告警: 私钥未经加密，导出存在风险.
+    </string>
+    <string name="confirm_qr_code_show">
+        已确认周围无人和摄像头。
+    </string>
+    <string name="btn_show_qr_code">显示二维码</string>
+    <string name="delete_account_tip">
+        请谨慎! 此操作无法撤销!
+    </string>
+    <string name="title_backup_keystore">导出Keystore</string>
+    <string name="title_tab_keystore">Keystore</string>
+    <string name="title_tab_qr_code">二维码</string>
+    <string name="action_copy_keystore">复制Keystore</string>
+
+    <string name="action_change_account_name">更改账号名</string>
+    <string name="action_change_password">更改密码</string>
+    <string name="action_export_private_key">导出私钥</string>
+    <string name="action_export_keystore">导出Keystore</string>
+    <string name="action_delete_account">删除账号</string>
+
+    <string name="success_change_account_name">更改账号名成功!</string>
+    <string name="error_change_account_name">删除账号失败!!!</string>
+    <string name="success_change_password">更改密码成功!</string>
+    <string name="error_change_password">更改密码失败!!!</string>
+    <string name="error_current_password">错误的密码!!!</string>
+    <string name="success_delete_account">删除账号成功.</string>
+    <string name="error_delete_account">删除账号失败!!!</string>
+
+    <string name="prompt_current_password">当前密码</string>
+    <string name="prompt_new_password">新密码</string>
+    <string name="tip_reset_password">忘记密码? 导入私钥可重置密码.</string>
+
+    <!-- Strings related to progress -->
+    <string name="sync">同步中…</string>
+    <string name="progress_create_account">创建中…</string>
+    <string name="progress_import_account">导入中…</string>
+    <string name="progress_transfer_success">转账成功</string>
+    <string name="progress_transfer_fail">转账失败</string>
+    <string name="progress_verify_account">验证账号</string>
+    <string name="progress_send_request">转账中…</string>
+
+    <!-- Strings related to create wallet -->
+    <string name="prompt_account_name">账号名</string>
+    <string name="prompt_password">密码</string>
+    <string name="prompt_repeat_password">重复密码</string>
+    <string name="action_agree">同意</string>
+    <string name="service_agreement">&#160;服务协议&#160;</string>
+    <string name="protocol_and">及</string>
+    <string name="privacy_policy">&#160;隐私条款</string>
+    <string name="tip_create_account_one">&#8226;&#160;&#160;密码用于保护私钥和交易授权，强度非常重要。</string>
+    <string name="tip_create_account_two">&#8226;&#160;&#160;钱包不存储密码，也无法帮您找回，请务必牢记！</string>
+    <string name="error_incorrect_name">账号名已占用</string>
+    <string name="error_invalid_password">密码太简单!</string>
+    <string name="error_incorrect_password">两次输入的密码不匹配</string>
+    <string name="error_field_required">必填字段</string>
+    <string name="success_create_account">创建账号成功!</string>
+    <string name="error_create_account">创建账号失败!</string>
+
+    <string name="error_account_exists">账号已存在! 请检查输入内容.</string>
+    <string name="error_account_address">错误的账号地址!</string>
+    <string name="success_import_account">导入账号成功!</string>
+    <string name="error_import_keystore">导入账号失败! 请检查输入内容.</string>
+    <string name="error_import_private_key">导入账号失败! 请检查输入内容.</string>
+    <string name="error_keystore">错误的keystore文件!</string>
+    <string name="error_private_key">错误的私钥!</string>
+    <string name="error_mnemonics">错误的助记词!</string>
+    <string name="error_mnemonics_length">助记词长度不正确!</string>
+
+    <string name="title_tab_import_keystore">官方文件</string>
+    <string name="title_tab_import_mnemonic">助记词</string>
+    <string name="title_tab_import_private_key">私钥</string>
+
+    <!-- menu list -->
+    <string name="menu_instant_exchange">闪兑</string>
+    <string name="menu_accounts">账号</string>
+    <string name="menu_contacts">联系人</string>
+    <string name="action_create_account">创建账号</string>
+    <string name="action_import_account">导入账号</string>
+
+    <string name="title_activity_import_account">导入账号</string>
+    <string name="import_official_editor_hint">keystore内容</string>
+    <string name="import_mnemonics_hint">助记词，以空格隔开。</string>
+    <string name="import_private_key_hint">私钥</string>
+    <string name="action_save">保存</string>
+
+    <!-- Strings related to tokens -->
+    <string name="title_tokens">资产</string>
+    <string name="navigation_drawer_open">打开侧边栏</string>
+    <string name="navigation_drawer_close">关闭侧标栏</string>
+    <string name="nav_header_desc">导航栏头部</string>
+    <string name="action_settings">设置</string>
+    <string name="title_activity_account_detail">AccountDetailActivity</string>
+    <string name="title_activity_transfer">TransferActivity</string>
+    <string name="tip_success_copy">已复制到粘贴板!</string>
+    <string name="action_search">搜索</string>
+    <string name="prompt_search_token">Token名称</string>
+    <string name="tip_search_token">请输入token名称</string>
+    <string name="no_result">没有结果</string>
+
+    <!-- Strings related to transfer -->
+    <string name="action_transfer">转账</string>
+    <string name="title_transfer_request">转账详情</string>
+    <string name="action_change_account">切换账号</string>
+    <string name="prompt_receiver_address">收款地址</string>
+    <string name="prompt_amount">金额</string>
+    <string name="prompt_remark">备注</string>
+    <string name="title_dialog_choose_account">选择账号</string>
+    <string name="tip_error_address">提示: 地址一般为0x开头的42位字符</string>
+    <string name="tip_same_address">地址不能为自己</string>
+    <string name="tip_invalid_amount">请填写正确的金额</string>
+    <string name="tip_invalid_gas_price">请填写gas price. 通常为 20 Gwei。</string>
+    <string name="tip_invalid_gas_limit">请填写gas limit，通常为 200000。</string>
+    <string name="tip_insufficient_eth">ETH不足</string>
+    <string name="pay_to_address">收款地址</string>
+    <string name="pay_by_address">付款账号</string>
+    <string name="fees">矿工费</string>
+    <string name="tip_error_password">转账失败！请检查密码！</string>
+    <string name="tip_error_net">网络连接超时!</string>
+    <string name="tip_error_transfer">转账失败!</string>
+    <string name="prompt_total_gas">0.000400000 ETH</string>
+    <string name="prompt_total_gas_desc">≈ Gas (20000) * Gas Price(20gwei)</string>
+    <string name="action_go_settings">前往设置</string>
+    <string name="tip_camera_permission">您还没有对相机进行授权，请前往设置页面授权</string>
+    <string name="prompt_gas_price">Gas Price</string>
+    <string name="prompt_gas_limit">Gas Limit</string>
+    <string name="unit_gas_price">Gwei</string>
+
+    <!-- Strings related to login -->
+    <string name="title_activity_account_change_password">更改密码</string>
+    <string name="title_activity_settings">设置</string>
+
+    <!-- Strings related to Settings -->
+    <string name="title_setting">设置</string>
+
+    <string name="pref_title_net_list">网络</string>
+    <string-array name="pref_net_list_titles">
+        <item>Mainnet</item>
+        <item>Ropsten(测试网络)</item>
+        <item>INFURAnet(测试网络)</item>
+        <item>Kovan(测试网络)</item>
+        <item>Rinkeby(测试网络)</item>
+    </string-array>
+    <string-array name="pref_net_list_values">
+        <item>https://mainnet.infura.io/Gy3Csyt4bzKIGsctm3g0</item>
+        <item>https://ropsten.infura.io/Gy3Csyt4bzKIGsctm3g0</item>
+        <item>https://infuranet.infura.io/Gy3Csyt4bzKIGsctm3g0</item>
+        <item>https://kovan.infura.io/Gy3Csyt4bzKIGsctm3g0</item>
+        <item>https://rinkeby.infura.io/Gy3Csyt4bzKIGsctm3g0</item>
+    </string-array>
+
+    <string name="pref_title_language">语言偏好设置</string>
+    <string-array name="pref_language_list_titles">
+        <item>English</item>
+        <item>简体中文</item>
+    </string-array>
+    <string-array name="pref_language_list_values">
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string name="pref_title_currency_unit">货币单位</string>
+    <string-array name="pref_currency_unit_list_titles">
+        <item>USD</item>
+        <item>CNY</item>
+    </string-array>
+    <string-array name="pref_currency_unit_list_values">
+        <item>USD</item>
+        <item>CNY</item>
+    </string-array>
+    <string name="pref_title_touch_id">Touch ID</string>
+    <string name="pref_summary_touch_id">无操作5s后</string>
+
+    <!-- share -->
+    <string name="key_network_url">ethereum.network.url</string>
+    <string name="key_wallet_language">wallet.language</string>
+    <string name="key_wallet_currency_unit">wallet.currency.unit</string>
+
+    <!-- strings about address code -->
+    <string name="title_address_qrcode">账号地址</string>
+
+    <!-- scan -->
+    <string name="title_capture_code">扫码</string>
+    <string name="tip_scan_code_failed">扫码失败</string>
+
+    <!-- string about account backup -->
+    <string name="title_account_backup">备份</string>
+    <string name="tip_backup_account">请立即备份您的账号!</string>
+    <string name="desc_backup_account_one">
+        区块链账号不同于传统的网站账号或应用账号，它是基于密码学的去中心化账号系统。
+    </string>
+    <string name="desc_backup_account_two">
+        您必须自己保管好钱包的私钥和交易密码，任何意外发生都会导致资产丢失。
+    </string>
+    <string name="desc_backup_account_three">
+        我们建议您立即备份 助记词 ，我们不会存储您的助记词，因此如果您不备份的话，下次进入账号时就无法备份助记词，但是您依然可以通过备份keystore文件或者私钥来备份账号。
+    </string>
+    <string name="btn_backup_now">立即备份</string>
+    <string name="desc_backup_mnemonic_one">请按正确的顺序抄写下助记词，并保存在一个安全的地方。</string>
+    <string name="desc_backup_mnemonic_two">下一步，请重新输入助记词已确保备份的正确性。</string>
+    <string name="title_activity_about">关于我们</string>
+    <string name="title_backup_mnemonic">备份助记词</string>
+    <string name="backup_mnemonic_warning">警告：不要截图。</string>
+    <string name="title_confirm_mnemonic">确认助记词</string>
+    <string name="desc_confirm_mnemonic">输入助记词，以确认你的备份助记词正确。</string>
+    <string name="tip_confirm_mnemonic">助记词之间以空格隔开。</string>
+    <string name="prompt_account_mnemonic">输入助记词</string>
+    <string name="success_enter_mnemonic">成功!</string>
+    <string name="tip_backup_mnemonic">助记词可以用于恢复钱包或者重置密码，请将备份放在只有你知道的安全地方。</string>
+    <string name="backup_success">备份助记词成功</string>
+
+    <!-- string about us -->
+    <string name="title_about_us">关于</string>
+    <string name="about_current_version">当前版本： </string>
+    <string name="desc_wallet">
+        梵钱包是一款完全开源、去中心化的移动端轻钱包，梵钱包旨为用户提供一款安全放心、简单易用的数字资产钱包应用。
+    </string>
+    <string name="about_privacy_policy">隐私条款</string>
+    <string name="about_service_perms">服务协议</string>
+    <string name="about_check_updates">检查更新</string>
+
+    <!-- privacy policy -->
+    <string name="title_activity_privacy_policy">梵钱包隐私政策</string>
+    <string name="title_service_terms">梵钱包服务协议</string>
+
+    <!-- string about contacts -->
+    <string name="title_contacts">联系人</string>
+    <string name="title_add_contact">添加联系人</string>
+    <string name="prompt_contact_first_name">名</string>
+    <string name="prompt_contact_last_name">姓</string>
+    <string name="prompt_contact_address">联系人地址</string>
+    <string name="title_choose_contact">选择联系人</string>
+    <string name="title_my_accounts">我的账号</string>
+    <string name="success_create_contact">添加联系人成功!</string>
+    <string name="error_create_contact">添加联系人失败! 请稍后重试!</string>
+    <string name="delete_contact_tip">要删除此联系人吗？</string>
+    <string name="success_delete_contact">删除联系人成功。</string>
+    <string name="error_delete_contact">删除联系人失败!!!</string>
+    <string name="title_contact_detail">联系人详情</string>
+    <string name="contact_address">联系人地址</string>
+    <string name="contact_remark">备注</string>
+    <string name="menu_edit_contact">编辑联系人</string>
+    <string name="menu_delete_contact">删除联系人</string>
+    <string name="title_edit_contact">编辑联系人</string>
+    <string name="success_edit_contact">编辑联系人成功!</string>
+    <string name="error_edit_contact">编辑联系人失败! 请稍后重试!</string>
+
+    <!-- fingerprint -->
+    <string name="tip_fingerprint">点击开启验证</string>
+    <string name="fail_fingerprint_verification">指纹验证失败</string>
+    <string name="error_fingerprint_verification">指纹验证失败</string>
+
+    <!-- instant exchange -->
+    <string name="title_activity_instant_exchange">闪兑</string>
+    <string name="title_current_rate">汇率</string>
+    <string name="choose_kyber_tokens">选择Tokens</string>
+    <string name="choose_send_kyber_tokens">选择发送Tokens</string>
+    <string name="choose_receive_kyber_tokens">选择接收Tokens</string>
+    <string name="prompt_pay">支付</string>
+    <string name="prompt_receive">接收</string>
+    <string name="prompt_pay_address">付款地址</string>
+    <string name="title_approve_transaction">合约授权</string>
+    <string name="tip_approve_transaction">授权。在交易发生前需要对合约进行授权。</string>
+    <string name="prompt_transfer_info">交易信息</string>
+    <string name="const_zero">0</string>
+    <string name="token_ethereum">ETH</string>
+    <string name="contract_approve">合约授权</string>
+    <string name="progress_get_rate">获取汇率…</string>
+    <string name="progress_get_allowance">获取授权额度</string>
+    <string name="action_instant_exchange">快速兑换</string>
+    <string name="prompt_approval_amount">授权额度</string>
+    <string name="tip_approve_success">合约授权请求已提交，请等待合约授权成功后进行下一步交易。</string>
+    <string name="prompt_send_amount">转出数量</string>
+    <string name="prompt_receive_amount">接收数量</string>
+</resources>
