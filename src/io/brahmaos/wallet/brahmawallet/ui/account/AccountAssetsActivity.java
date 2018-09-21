@@ -3,19 +3,29 @@ package io.brahmaos.wallet.brahmawallet.ui.account;
 import android.app.ProgressDialog;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.hwangjr.rxbus.RxBus;
+import com.hwangjr.rxbus.annotation.Subscribe;
+import com.hwangjr.rxbus.annotation.Tag;
+import com.hwangjr.rxbus.thread.EventThread;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -30,11 +40,14 @@ import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
 import io.brahmaos.wallet.brahmawallet.model.AccountAssets;
 import io.brahmaos.wallet.brahmawallet.model.CryptoCurrency;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
+import io.brahmaos.wallet.brahmawallet.ui.transaction.EthTransactionsActivity;
+import io.brahmaos.wallet.brahmawallet.ui.transaction.TransactionsActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transfer.TransferActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
 import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
@@ -65,6 +78,12 @@ public class AccountAssetsActivity extends BaseActivity {
     TextView tvTotalAssets;
     @BindView(R.id.tv_currency_unit)
     TextView tvCurrencyUnit;
+    @BindView(R.id.layout_app_bar)
+    AppBarLayout appBarLayout;
+    @BindView(R.id.layout_collapsing_toolbar)
+    CollapsingToolbarLayout collapsingToolbarLayout;
+    @BindView(R.id.iv_account_bg)
+    ImageView ivAccountBg;
 
     private int accountId;
     private AccountEntity account;
@@ -80,6 +99,7 @@ public class AccountAssetsActivity extends BaseActivity {
         setContentView(R.layout.activity_account_assets);
         ButterKnife.bind(this);
         showNavBackBtn();
+        RxBus.get().register(this);
         accountId = getIntent().getIntExtra(IntentParam.PARAM_ACCOUNT_ID, 0);
         if (accountId <= 0) {
             finish();
@@ -100,6 +120,8 @@ public class AccountAssetsActivity extends BaseActivity {
         mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
         cryptoCurrencies = MainService.getInstance().getCryptoCurrencies();
         accountAssetsList = MainService.getInstance().getAccountAssetsList();
+
+        appBarLayout.setExpanded(true);
     }
 
     @Override
@@ -125,6 +147,7 @@ public class AccountAssetsActivity extends BaseActivity {
 
     private void initView() {
         ImageManager.showAccountAvatar(AccountAssetsActivity.this, ivAccountAvatar, account);
+        ImageManager.showAccountBackground(AccountAssetsActivity.this, ivAccountBg, account);
         tvAccountName.setText(account.getName());
         tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
 
@@ -133,6 +156,38 @@ public class AccountAssetsActivity extends BaseActivity {
             intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
             startActivity(intent);
         });
+
+        appBarLayout.addOnOffsetChangedListener((appBarLayout, verticalOffset) -> {
+            if (Math.abs(verticalOffset) >= appBarLayout.getTotalScrollRange() / 2) {
+                collapsingToolbarLayout.setTitle(account.getName());
+            } else {
+                collapsingToolbarLayout.setTitle("");
+            }
+        });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_qrcode, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.menu_qrcode) {
+            if (account != null) {
+                Intent intent = new Intent(AccountAssetsActivity.this, AddressQrcodeActivity.class);
+                intent.putExtra(IntentParam.PARAM_ACCOUNT_INFO, account);
+                startActivity(intent);
+            }
+            return true;
+        } else if (id == android.R.id.home) {
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
     private void initAssets() {
@@ -162,32 +217,37 @@ public class AccountAssetsActivity extends BaseActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void onDestroy() {
+        super.onDestroy();
+        RxBus.get().unregister(this);
+    }
 
-        if (requestCode == REQ_CODE_TRANSFER) {
-            if (resultCode == RESULT_OK) {
-                BLog.i(tag(), "transfer success");
-                mViewModel.getAccounts().observe(this, accountEntities -> {
-                    BLog.i(tag(), "get all accounts for get total account assets");
-                });
-                customProgressDialog = new CustomProgressDialog(this, R.style.CustomProgressDialogStyle, getString(R.string.sync));
-                customProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-                customProgressDialog.setCancelable(false);
-                mViewModel.getAssets().observe(this, (List<AccountAssets> accountAssets) -> {
-                    customProgressDialog.show();
-                    BLog.i(tag(), "the assets length is: " + accountAssets);
-                    if (accountAssets != null) {
-                        BLog.i(tag(), "the assets length is: " + accountAssets.size());
-                        customProgressDialog.cancel();
-                        accountAssetsList = accountAssets;
-                        initAssets();
-                        recyclerViewAssets.getAdapter().notifyDataSetChanged();
-                    }
-                });
+    @Subscribe(
+            thread = EventThread.MAIN_THREAD,
+            tags = {
+                    @Tag(EventTypeDef.ACCOUNT_ASSETS_TRANSFER)
             }
-        }
+    )
+    public void refreshAssets(String status) {
+        BLog.i(tag(), "transfer success");
+        mViewModel.getAccounts().observe(this, accountEntities -> {
+            BLog.i(tag(), "get all accounts for get total account assets");
+        });
+        customProgressDialog = new CustomProgressDialog(this, R.style.CustomProgressDialogStyle, getString(R.string.sync));
+        customProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        customProgressDialog.setCancelable(false);
+        mViewModel.getAssets().observe(this, (List<AccountAssets> accountAssets) -> {
+            customProgressDialog.show();
+            if (accountAssets != null) {
+                BLog.i(tag(), "the assets length is: " + accountAssets.size());
+                customProgressDialog.cancel();
+                accountAssetsList = accountAssets;
+                initAssets();
+                recyclerViewAssets.getAdapter().notifyDataSetChanged();
 
-        super.onActivityResult(requestCode, resultCode, data);
+                RxBus.get().post(EventTypeDef.ACCOUNT_ASSETS_CHANGE, "succ");
+            }
+        });
     }
 
     /**
@@ -223,15 +283,23 @@ public class AccountAssetsActivity extends BaseActivity {
             }
 
             holder.layoutAssets.setOnClickListener(v -> {
-                Intent intent = new Intent(AccountAssetsActivity.this, TransferActivity.class);
-                intent.putExtra(IntentParam.PARAM_ACCOUNT_INFO, account);
-                intent.putExtra(IntentParam.PARAM_TOKEN_INFO, tokenEntity);
-                startActivityForResult(intent, REQ_CODE_TRANSFER);
+                if (tokenEntity.getName().toLowerCase().equals(BrahmaConst.ETHEREUM)) {
+                    Intent intent = new Intent(AccountAssetsActivity.this, EthTransactionsActivity.class);
+                    intent.putExtra(IntentParam.PARAM_ACCOUNT_INFO, account);
+                    intent.putExtra(IntentParam.PARAM_TOKEN_INFO, tokenEntity);
+                    startActivity(intent);
+                } else {
+                    Intent intent = new Intent(AccountAssetsActivity.this, TransactionsActivity.class);
+                    intent.putExtra(IntentParam.PARAM_ACCOUNT_INFO, account);
+                    intent.putExtra(IntentParam.PARAM_TOKEN_INFO, tokenEntity);
+                    startActivity(intent);
+                }
             });
 
             holder.tvTokenName.setText(tokenEntity.getShortName());
             holder.tvTokenFullName.setText(tokenEntity.getName());
-            ImageManager.showTokenIcon(AccountAssetsActivity.this, holder.ivTokenIcon, tokenEntity.getAvatar(), tokenEntity.getName());
+            ImageManager.showTokenIcon(AccountAssetsActivity.this, holder.ivTokenIcon,
+                    tokenEntity.getName(), tokenEntity.getAddress());
             BigInteger tokenCount = BigInteger.ZERO;
             for (AccountAssets accountAssets : accountAssetsList) {
                 if (accountAssets.getTokenEntity().getAddress().equals(tokenEntity.getAddress()) &&

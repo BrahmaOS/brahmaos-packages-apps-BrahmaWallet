@@ -1,12 +1,10 @@
 package io.brahmaos.wallet.brahmawallet.ui;
 
 import android.Manifest;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.GravityCompat;
@@ -16,6 +14,8 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -27,7 +27,15 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import android.content.Context;
+import android.os.UserHandle;
+import android.os.UserManager;
+
 import com.bumptech.glide.Glide;
+import com.hwangjr.rxbus.RxBus;
+import com.hwangjr.rxbus.annotation.Subscribe;
+import com.hwangjr.rxbus.annotation.Tag;
+import com.hwangjr.rxbus.thread.EventThread;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -36,14 +44,13 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
 import io.brahmaos.wallet.brahmawallet.model.AccountAssets;
 import io.brahmaos.wallet.brahmawallet.model.CryptoCurrency;
 import io.brahmaos.wallet.brahmawallet.model.VersionInfo;
@@ -56,6 +63,7 @@ import io.brahmaos.wallet.brahmawallet.ui.account.ImportAccountActivity;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.ui.contact.ContactsActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.AboutActivity;
+import io.brahmaos.wallet.brahmawallet.ui.setting.HelpActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.SettingsActivity;
 import io.brahmaos.wallet.brahmawallet.ui.token.TokensActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transfer.InstantExchangeActivity;
@@ -77,31 +85,18 @@ public class MainActivity extends BaseActivity
 
     public static int REQ_CODE_TRANSFER = 10;
 
-    @BindView(R.id.layout_new_account)
-    ConstraintLayout createAccountLayout;
-    @BindView(R.id.swipe_refresh_layout)
-    SwipeRefreshLayout swipeRefreshLayout;
-    @BindView(R.id.tv_appro_equal)
-    TextView tvApproEqual;
-    @BindView(R.id.tv_test_network)
-    TextView tvTestNetwork;
-    @BindView(R.id.tv_money_unit)
-    TextView tvCurrencyUnit;
-    @BindView(R.id.tv_total_assets)
-    TextView tvTotalAssets;
-    @BindView(R.id.iv_assets_visibility)
-    ImageView ivAssetsVisible;
-    @BindView(R.id.tv_assets_categories_num)
-    TextView tvTokenCategories;
-    @BindView(R.id.assets_recycler)
-    RecyclerView recyclerViewAssets;
+    private LinearLayout layoutHeader;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private TextView tvApproEqual;
+    private TextView tvTestNetwork;
+    private TextView tvCurrencyUnit;
+    private TextView tvTotalAssets;
+    private ImageView ivAssetsVisible;
+    private TextView tvTokenCategories;
+    private RecyclerView recyclerViewAssets;
+    private DrawerLayout drawer;
+    private NavigationView navigationView;
 
-    @BindView(R.id.drawer_layout)
-    DrawerLayout drawer;
-    @BindView(R.id.nav_view)
-    NavigationView navigationView;
-
-    private AccountViewModel mViewModel;
     private List<AccountEntity> cacheAccounts = new ArrayList<>();
     private List<TokenEntity> cacheTokens = new ArrayList<>();
     private List<AccountAssets> cacheAssets = new ArrayList<>();
@@ -113,24 +108,46 @@ public class MainActivity extends BaseActivity
         BLog.i(tag(), "MainActivity onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_drawer);
-        ButterKnife.bind(this);
+        viewBind();
+
+        RxBus.get().register(this);
+
         VersionUpgradeService.getInstance().checkVersion(this, true, this);
         MainService.getInstance().getTokensLatestVersion();
-
-        if (MainService.getInstance().isHaveAccount()) {
-            createAccountLayout.setVisibility(View.GONE);
-            swipeRefreshLayout.setVisibility(View.VISIBLE);
-        } else {
-            createAccountLayout.setVisibility(View.VISIBLE);
-            swipeRefreshLayout.setVisibility(View.GONE);
-        }
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
 
         initView();
         initData();
     }
 
+    private void viewBind() {
+        layoutHeader = findViewById(R.id.layout_header);
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+        tvApproEqual = findViewById(R.id.tv_appro_equal);
+        tvTestNetwork = findViewById(R.id.tv_test_network);
+        tvCurrencyUnit = findViewById(R.id.tv_money_unit);
+        tvTotalAssets = findViewById(R.id.tv_total_assets);
+        ivAssetsVisible = findViewById(R.id.iv_assets_visibility);
+        tvTokenCategories = findViewById(R.id.tv_assets_categories_num);
+        recyclerViewAssets = findViewById(R.id.assets_recycler);
+        drawer = findViewById(R.id.drawer_layout);
+        navigationView = findViewById(R.id.nav_view);
+    }
+
     private void initView() {
+        DisplayMetrics display = this.getResources().getDisplayMetrics();
+
+        int statusBarHeight = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            statusBarHeight = getResources().getDimensionPixelSize(resourceId);
+        }
+        int toolbarHeight = getResources().getDimensionPixelSize(R.dimen.height_toolbar);
+
+        LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) layoutHeader.getLayoutParams();
+        params.width = display.widthPixels;
+        params.height = ((int) (display.heightPixels * BrahmaConst.MAIN_PAGE_HEADER_RATIO) - statusBarHeight - toolbarHeight);
+        layoutHeader.setLayoutParams(params);
+
         swipeRefreshLayout.setColorSchemeResources(R.color.master);
         swipeRefreshLayout.setRefreshing(true);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -143,7 +160,7 @@ public class MainActivity extends BaseActivity
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
             // get the latest assets
-            mViewModel.getTotalAssets();
+            MainService.getInstance().loadTotalAccountAssets();
             // get Currencies
             getCryptoCurrents();
         });
@@ -161,17 +178,6 @@ public class MainActivity extends BaseActivity
         ImageView ivChooseToken = findViewById(R.id.iv_choose_token);
         ivChooseToken.setOnClickListener(v -> {
             Intent intent = new Intent(this, TokensActivity.class);
-            startActivity(intent);
-        });
-
-        Button createWalletBtn = findViewById(R.id.btn_create_account);
-        createWalletBtn.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CreateAccountActivity.class);
-            startActivity(intent);
-        });
-        Button importAccountBtn = findViewById(R.id.btn_import_account);
-        importAccountBtn.setOnClickListener(v -> {
-            Intent intent = new Intent(this, ImportAccountActivity.class);
             startActivity(intent);
         });
 
@@ -199,34 +205,39 @@ public class MainActivity extends BaseActivity
     }
 
     private void initData() {
-        mViewModel.getAllTokensCount().observe(this, count -> {
-            if (count == null || count <= 0) {
-                MainService.getInstance().getTokenListByIPFS();
-            }
-        });
-        mViewModel.getAccounts().observe(this, accountEntities -> {
-            cacheAccounts = accountEntities;
-            checkContentShow();
-        });
+        cacheTokens = MainService.getInstance().getAllChosenTokens();
+        cacheAccounts = MainService.getInstance().getAllAccounts();
+        recyclerViewAssets.getAdapter().notifyDataSetChanged();
+        Log.d(tag(), "the accounts is:" + cacheAccounts.toString());
+        // fetch crypto currents
+        getCryptoCurrents();
+        // fetch account token amount
+        getAllAssets();
+    }
 
-        mViewModel.getTokens().observe(this, tokenEntities -> {
-            if (tokenEntities != null) {
-                swipeRefreshLayout.setRefreshing(true);
-                tvTokenCategories.setText(String.valueOf(tokenEntities.size()));
-                cacheTokens = tokenEntities;
-                recyclerViewAssets.getAdapter().notifyDataSetChanged();
-                // fetch crypto currents
-                getCryptoCurrents();
-            }
-        });
+    private void getAllAssets() {
+        MainService.getInstance().loadTotalAccountAssets()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<List<AccountAssets>>() {
 
-        mViewModel.getAssets().observe(this, (List<AccountAssets> accountAssets) -> {
-            BLog.i(tag(), "get home account assets");
-            if (accountAssets != null) {
-                cacheAssets = accountAssets;
-                showAssetsCurrency();
-            }
-        });
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        throwable.printStackTrace();
+                        cacheAssets = MainService.getInstance().getAccountAssetsList();
+                        showAssetsCurrency();
+                    }
+
+                    @Override
+                    public void onNext(List<AccountAssets> apr) {
+                        cacheAssets = MainService.getInstance().getAccountAssetsList();
+                        showAssetsCurrency();
+                    }
+                });;
     }
 
     @Override
@@ -239,8 +250,7 @@ public class MainActivity extends BaseActivity
         if (changeNetworkFlag) {
             MainService.getInstance().setAccountAssetsList(new ArrayList<>());
             swipeRefreshLayout.setRefreshing(true);
-            mViewModel.getTotalAssets();
-
+            getAllAssets();
             changeNetwork();
         }
         // change language; if change language, then recreate the activity to reload the resource.
@@ -299,8 +309,8 @@ public class MainActivity extends BaseActivity
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
         } else if (id == R.id.nav_help) {
-            /*Intent intent = new Intent(this, FingerActivity.class);
-            startActivity(intent);*/
+            Intent intent = new Intent(this, HelpActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_info) {
             Intent intent = new Intent(this, AboutActivity.class);
             startActivity(intent);
@@ -348,37 +358,21 @@ public class MainActivity extends BaseActivity
 
                     @Override
                     public void onCompleted() {
-                        cacheCryptoCurrencies = MainService.getInstance().getCryptoCurrencies();
-                        showAssetsCurrency();
                     }
 
                     @Override
                     public void onError(Throwable throwable) {
                         throwable.printStackTrace();
+                        cacheCryptoCurrencies = MainService.getInstance().getCryptoCurrencies();
+                        showAssetsCurrency();
                     }
 
                     @Override
                     public void onNext(List<CryptoCurrency> apr) {
-
+                        cacheCryptoCurrencies = MainService.getInstance().getCryptoCurrencies();
+                        showAssetsCurrency();
                     }
                 });
-    }
-
-    /**
-     *  if account's length > 0, show the total assets;
-     *  else show the create account.
-     */
-    private void checkContentShow() {
-        if (cacheAccounts == null || cacheAccounts.size() == 0) {
-            BLog.e(tag(), "the account is null");
-            createAccountLayout.setVisibility(View.VISIBLE);
-            swipeRefreshLayout.setVisibility(View.GONE);
-        } else {
-            swipeRefreshLayout.setRefreshing(true);
-            BLog.e(tag(), "the account size is: " + cacheAccounts.size());
-            createAccountLayout.setVisibility(View.GONE);
-            swipeRefreshLayout.setVisibility(View.VISIBLE);
-        }
     }
 
     /**
@@ -425,7 +419,7 @@ public class MainActivity extends BaseActivity
             if (resultCode == RESULT_OK) {
                 BLog.i(tag(), "transfer success");
                 // get the latest assets
-                mViewModel.getTotalAssets();
+                getAllAssets();
                 swipeRefreshLayout.setRefreshing(true);
             }
         } else if (requestCode == PermissionUtil.CODE_EXTERNAL_STORAGE) {
@@ -438,6 +432,26 @@ public class MainActivity extends BaseActivity
         }
 
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        RxBus.get().unregister(this);
+    }
+
+    @Subscribe(
+            thread = EventThread.MAIN_THREAD,
+            tags = {
+                    @Tag(EventTypeDef.ACCOUNT_ASSETS_CHANGE)
+            }
+    )
+    public void refreshAssets(String status) {
+        BLog.d(tag(), "account assetst change");
+        cacheAssets = MainService.getInstance().getAccountAssetsList();
+        BLog.d(tag(), cacheAssets.toString());
+        showAssetsCurrency();
     }
 
     /**
@@ -476,7 +490,8 @@ public class MainActivity extends BaseActivity
             holder.tvTokenName.setText(tokenEntity.getShortName());
             holder.tvTokenFullName.setText(tokenEntity.getName());
             holder.tvTokenPrice.setText("0");
-            ImageManager.showTokenIcon(MainActivity.this, holder.ivTokenIcon, tokenEntity.getAvatar(), tokenEntity.getName());
+            ImageManager.showTokenIcon(MainActivity.this, holder.ivTokenIcon,
+                    tokenEntity.getName(), tokenEntity.getAddress());
             BigInteger tokenCount = BigInteger.ZERO;
             for (AccountAssets accountAssets : cacheAssets) {
                 if (accountAssets.getTokenEntity().getAddress().toLowerCase().equals(tokenEntity.getAddress().toLowerCase())) {

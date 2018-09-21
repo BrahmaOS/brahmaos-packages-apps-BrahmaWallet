@@ -9,4 +9,9 @@ public class ApiConst {
     public static final int OSTYPE_ANDROID = 0;
     public static final String PARAM_VER_INFO = "v";
     public static final int TOKEN_TYPE_ERC20 = 1;
+    public static final String PARAM_TRANSACTIONS = "transactions";
+    public static final String PARAM_JSONRPC = "jsonrpc";
+    public static final String PARAM_METHOD = "method";
+    public static final String PARAM_PARAMS = "params";
+    public static final String PARAM_ID = "id";
 }

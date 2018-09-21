@@ -91,8 +91,7 @@ public class AccountViewModel extends AndroidViewModel {
         mObservableTokens.setValue(null);
         mObservableAssets.setValue(null);
 
-        LiveData<List<AccountEntity>> accounts = ((WalletApp) application).getRepository()
-                .getAccounts();
+        LiveData<List<AccountEntity>> accounts = null;
 
         // observe the changes of the accounts from the database and forward them
         // When accounts change, reacquire the total assets.
@@ -122,7 +121,7 @@ public class AccountViewModel extends AndroidViewModel {
                 account.setName(name);
                 account.setAddress(address);
                 account.setFilename(filename);
-                ((WalletApp) getApplication()).getRepository().createAccount(account);
+                //((WalletApp) getApplication()).getRepository().createAccount(account);
             } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException | IOException | CipherException e) {
                 e.printStackTrace();
             }
@@ -168,7 +167,7 @@ public class AccountViewModel extends AndroidViewModel {
                     account.setFilename(filename);
                     account.setMnemonics(mnemonicCode);
                     MainService.getInstance().setNewMnemonicAccount(account);
-                    ((WalletApp) getApplication()).getRepository().createAccount(account);
+                    //((WalletApp) getApplication()).getRepository().createAccount(account);
                 }
             } catch (IOException | CipherException | UnreadableWalletException e) {
                 e.printStackTrace();
@@ -193,7 +192,7 @@ public class AccountViewModel extends AndroidViewModel {
                     account.setName(name);
                     account.setAddress(BrahmaWeb3jService.getInstance().prependHexPrefix(walletFile.getAddress()));
                     account.setFilename(filename);
-                    ((WalletApp) getApplication()).getRepository().createAccount(account);
+                    //((WalletApp) getApplication()).getRepository().createAccount(account);
                     e.onNext(Boolean.TRUE);
                 } else {
                     e.onNext(Boolean.FALSE);
@@ -247,7 +246,7 @@ public class AccountViewModel extends AndroidViewModel {
                     account.setName(name);
                     account.setAddress(BrahmaWeb3jService.getInstance().prependHexPrefix(walletFile.getAddress()));
                     account.setFilename(filename);
-                    ((WalletApp) getApplication()).getRepository().createAccount(account);
+                    //((WalletApp) getApplication()).getRepository().createAccount(account);
                     e.onNext(address);
                 }
             } catch (CipherException | IOException e1) {
@@ -304,7 +303,7 @@ public class AccountViewModel extends AndroidViewModel {
                     account.setName(name);
                     account.setAddress(BrahmaWeb3jService.getInstance().prependHexPrefix(walletFile.getAddress()));
                     account.setFilename(filename);
-                    ((WalletApp) getApplication()).getRepository().createAccount(account);
+                    //((WalletApp) getApplication()).getRepository().createAccount(account);
                     e.onNext(address);
                 }
             } catch (CipherException | IOException | UnreadableWalletException e1) {
@@ -316,15 +315,15 @@ public class AccountViewModel extends AndroidViewModel {
     }
 
     public LiveData<AccountEntity> getAccountById(int accountId) {
-        return ((WalletApp) getApplication()).getRepository().getAccountById(accountId);
+        //return ((WalletApp) getApplication()).getRepository().getAccountById(accountId);
+        return null;
     }
 
     public LiveData<List<TokenEntity>> getTokens() {
         if (mObservableTokens.getValue() == null ||
                 mObservableTokens.getValue().size() == 0) {
-            LiveData<List<TokenEntity>> tokens = ((WalletApp) getApplication()).getRepository()
-                    .getTokens();
-
+            //LiveData<List<TokenEntity>> tokens = ((WalletApp) getApplication()).getRepository().getTokens();
+            LiveData<List<TokenEntity>> tokens = null;
             // observe the changes of the tokens from the database and forward them
             // When tokens change, reacquire the total assets.
             mObservableTokens.addSource(tokens, new android.arch.lifecycle.Observer<List<TokenEntity>>() {
@@ -340,13 +339,13 @@ public class AccountViewModel extends AndroidViewModel {
 
     public Completable checkToken(TokenEntity tokenEntity) {
         return Completable.fromAction(() -> {
-            ((WalletApp) getApplication()).getRepository().createToken(tokenEntity);
+            //((WalletApp) getApplication()).getRepository().createToken(tokenEntity);
         });
     }
 
     public Completable uncheckToken(TokenEntity tokenEntity) {
         return Completable.fromAction(() -> {
-            ((WalletApp) getApplication()).getRepository().deleteToken(tokenEntity.getAddress());
+            //((WalletApp) getApplication()).getRepository().deleteToken(tokenEntity.getAddress());
         });
     }
 
@@ -469,7 +468,11 @@ public class AccountViewModel extends AndroidViewModel {
     }
 
     public Completable changeAccountName(int accountId, String newName) {
-        return Completable.fromAction(() -> ((WalletApp) getApplication()).getRepository().changeAccountName(accountId, newName));
+        return null;
+    }
+
+    public Completable deleteAccount(int accountId) {
+        return null;
     }
 
     /*
@@ -490,7 +493,7 @@ public class AccountViewModel extends AndroidViewModel {
                 File destination = new File(getApplication().getFilesDir(), filename);
                 ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
                 objectMapper.writeValue(destination, walletFile);
-                ((WalletApp) getApplication()).getRepository().changeAccountFilename(accountId, filename);
+                //((WalletApp) getApplication()).getRepository().changeAccountFilename(accountId, filename);
                 e.onNext(address);
             } catch (CipherException | IOException e1) {
                 e1.printStackTrace();
@@ -500,39 +503,39 @@ public class AccountViewModel extends AndroidViewModel {
         });
     }
 
-    public Completable deleteAccount(int accountId) {
-        return Completable.fromAction(() -> ((WalletApp) getApplication()).getRepository().deleteAccount(accountId));
-    }
-
     public LiveData<List<AllTokenEntity>> getAllTokens() {
-        return ((WalletApp) getApplication()).getRepository().getAllTokens();
+        //return ((WalletApp) getApplication()).getRepository().getAllTokens();
+        return null;
     }
 
     public LiveData<List<AllTokenEntity>> getShowTokens() {
-        return ((WalletApp) getApplication()).getRepository().getShowTokens();
+        //return ((WalletApp) getApplication()).getRepository().getShowTokens();
+        return null;
     }
 
     public LiveData<List<AllTokenEntity>> queryAllTokens(String param) {
-        return ((WalletApp) getApplication()).getRepository().queryAllTokens(param);
+        //return ((WalletApp) getApplication()).getRepository().queryAllTokens(param);
+        return null;
     }
 
     public Completable showAllToken(TokenEntity tokenEntity, AllTokenEntity allTokenEntity) {
         return Completable.fromAction(() -> {
-            ((WalletApp) getApplication()).getRepository().createToken(tokenEntity);
-            ((WalletApp) getApplication()).getRepository().showAllToken(allTokenEntity);
+            //((WalletApp) getApplication()).getRepository().createToken(tokenEntity);
+            //((WalletApp) getApplication()).getRepository().showAllToken(allTokenEntity);
         });
     }
 
     public Completable hideAllToken(TokenEntity tokenEntity, AllTokenEntity allTokenEntity) {
         return Completable.fromAction(() -> {
-            ((WalletApp) getApplication()).getRepository().deleteToken(tokenEntity.getAddress());
-            ((WalletApp) getApplication()).getRepository().hideAllToken(allTokenEntity);
+            //((WalletApp) getApplication()).getRepository().deleteToken(tokenEntity.getAddress());
+            //((WalletApp) getApplication()).getRepository().hideAllToken(allTokenEntity);
         });
     }
 
     public Observable<List<AllTokenEntity>> queryAllTokensSync(String param) {
         return Observable.create(e -> {
-            List<AllTokenEntity> allTokenEntities = ((WalletApp) getApplication()).getRepository().queryAllTokensSync(param);
+            //List<AllTokenEntity> allTokenEntities = ((WalletApp) getApplication()).getRepository().queryAllTokensSync(param);
+            List<AllTokenEntity> allTokenEntities = null;
             e.onNext(allTokenEntities);
             e.onCompleted();
         });
@@ -540,13 +543,15 @@ public class AccountViewModel extends AndroidViewModel {
 
     public Observable<List<TokenEntity>> getChosenTokens() {
         return Observable.create(e -> {
-            List<TokenEntity> allChosenTokens = ((WalletApp) getApplication()).getRepository().queryChosenTokensSync();
-            e.onNext(allChosenTokens);
+            //List<TokenEntity> allChosenTokens = ((WalletApp) getApplication()).getRepository().queryChosenTokensSync();
+
+            e.onNext(null);
             e.onCompleted();
         });
     }
 
     public LiveData<Integer> getAllTokensCount() {
-        return ((WalletApp) getApplication()).getRepository().getAllTokensCount();
+        //return ((WalletApp) getApplication()).getRepository().getAllTokensCount();
+        return null;
     }
 }

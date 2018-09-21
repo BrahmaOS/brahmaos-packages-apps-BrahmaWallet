@@ -147,7 +147,7 @@ public class Networks {
             HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger() {
                 @Override
                 public void log(@NonNull String message) {
-                    BLog.i(tag(), message);
+                    //BLog.i(tag(), message);
                 }
             });
             httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);

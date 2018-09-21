@@ -51,7 +51,6 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        BLog.d(tag(), "onCreate");
         super.onCreate(savedInstanceState);
     }
 
@@ -69,7 +68,6 @@ public abstract class BaseActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        BLog.d(tag(), "onDestroy");
         super.onDestroy();
     }
 

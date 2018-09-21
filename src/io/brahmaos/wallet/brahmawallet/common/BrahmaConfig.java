@@ -1,5 +1,6 @@
 package io.brahmaos.wallet.brahmawallet.common;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -14,7 +15,9 @@ import java.util.List;
 import java.util.Locale;
 
 import io.brahmaos.wallet.brahmawallet.R;
+import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
+import io.brahmaos.wallet.brahmawallet.model.Account;
 
 /**
  * the project common config
@@ -176,17 +179,25 @@ public class BrahmaConfig {
     }
 
     public String getServiceTermsUrl() {
-        String serviceUrl = BrahmaConst.SERVICE_PATH_EN;
+        String serviceUrl = BrahmaConst.PAGE_BASE_URL + BrahmaConst.HELP_PREFIX + "service_en.html";
         if (languageLocale.equals(BrahmaConst.LANGUAGE_CHINESE)) {
-            serviceUrl = BrahmaConst.SERVICE_PATH_ZH;
+            serviceUrl = BrahmaConst.PAGE_BASE_URL + BrahmaConst.HELP_PREFIX + "service_zh.html";
         }
         return serviceUrl;
     }
 
     public String getPrivacyUrl() {
-        String serviceUrl = BrahmaConst.PRIVACY_POLICY_PATH_EN;
+        String serviceUrl = BrahmaConst.PAGE_BASE_URL + BrahmaConst.HELP_PREFIX + "privacy_policy_en.html";
         if (languageLocale.equals(BrahmaConst.LANGUAGE_CHINESE)) {
-            serviceUrl = BrahmaConst.PRIVACY_POLICY_PATH_ZH;
+            serviceUrl = BrahmaConst.PAGE_BASE_URL + BrahmaConst.HELP_PREFIX + "privacy_policy_zh.html";
+        }
+        return serviceUrl;
+    }
+
+    public String getHelpUrl() {
+        String serviceUrl = BrahmaConst.PAGE_BASE_URL + BrahmaConst.HELP_PREFIX + "help_en.html";
+        if (languageLocale.equals(BrahmaConst.LANGUAGE_CHINESE)) {
+            serviceUrl = BrahmaConst.PAGE_BASE_URL + BrahmaConst.HELP_PREFIX + "help_zh.html";
         }
         return serviceUrl;
     }
@@ -211,5 +222,21 @@ public class BrahmaConfig {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt(KEY_TOKEN_LIST_VERSION, tokenListVersion);
         editor.apply();
+    }
+
+    public String getEtherscanTxsUrl(AccountEntity mAccount, TokenEntity mToken) {
+        String etherscanUrl = BrahmaConst.ETHERSCAN_BASE_URL + "address/" + mAccount.getAddress().toLowerCase();
+        if (!mToken.getName().toLowerCase().equals(BrahmaConst.ETHEREUM)) {
+            etherscanUrl += "#tokentxns";
+        }
+        return etherscanUrl;
+    }
+
+    public String getEtherscanTxDetailUrl(String txHash) {
+        return BrahmaConst.ETHERSCAN_BASE_URL + "tx/" + txHash;
+    }
+
+    public String getFeedbackUrl() {
+        return BrahmaConst.FEEDBACK_URL;
     }
 }

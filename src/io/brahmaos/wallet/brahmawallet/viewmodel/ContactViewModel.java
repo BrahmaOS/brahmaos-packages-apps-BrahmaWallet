@@ -39,32 +39,35 @@ public class ContactViewModel extends AndroidViewModel {
      * Expose the LiveData Products query so the UI can observe it.
      */
     public LiveData<List<AccountEntity>> getAccounts() {
-        return ((WalletApp) getApplication()).getRepository().getAccounts();
+        //return ((WalletApp) getApplication()).getRepository().getAccounts();
+        return null;
     }
 
     public LiveData<List<ContactEntity>> getContacts() {
-        return ((WalletApp) getApplication()).getRepository().loadAllContact();
+        //return ((WalletApp) getApplication()).getRepository().loadAllContact();
+        return null;
     }
 
     public Completable createContact(ContactEntity contact) {
         return Completable.fromAction(() -> {
-            ((WalletApp) getApplication()).getRepository().insertContact(contact);
+            //((WalletApp) getApplication()).getRepository().insertContact(contact);
         });
     }
 
     public Completable updateContact(int contactId, ContactEntity contact) {
         return Completable.fromAction(() -> {
-            ((WalletApp) getApplication()).getRepository().updateContact(contactId, contact);
+            //((WalletApp) getApplication()).getRepository().updateContact(contactId, contact);
         });
     }
 
     public Completable deleteContact(int contactId) {
         return Completable.fromAction(() -> {
-            ((WalletApp) getApplication()).getRepository().deleteContact(contactId);
+            //((WalletApp) getApplication()).getRepository().deleteContact(contactId);
         });
     }
 
     public LiveData<ContactEntity> getContactById(int contactId) {
-        return ((WalletApp) getApplication()).getRepository().getContactById(contactId);
+        //return ((WalletApp) getApplication()).getRepository().getContactById(contactId);
+        return null;
     }
 }

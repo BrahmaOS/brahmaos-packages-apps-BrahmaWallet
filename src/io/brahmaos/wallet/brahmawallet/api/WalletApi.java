@@ -35,13 +35,31 @@ public interface WalletApi {
     /**
      * Get the latest version of the wallet
      */
-    @GET("/v1/wallet/versions/latest")
+    @GET("/v2/wallet/versions/latest")
     Observable<ApiRespResult> getLatestVersion(@Query("app") int appId,
-                                               @Query("os") int osId);
+                                               @Query("os") int osId,
+                                               @Query("lang") String language);
 
     /**
      * Get the latest version of the tokens
      */
     @GET("/v1/wallet/tokens/latest")
     Observable<ApiRespResult> getLatestTokensVersion(@Query("type") int type);
+
+    /**
+     * Get the account transactions.
+     */
+    @GET("/v1/eth/txs/all")
+    Observable<ApiRespResult> getEthTransactions(@Query("acct") String accountAddress,
+                                                 @Query("page") int page,
+                                                 @Query("count") int count);
+
+    /**
+     * Get the account token transactions.
+     */
+    @GET("/v1/eth/tokens/{token_address}/txs/all")
+    Observable<ApiRespResult> getTokenTransactions(@Path("token_address") String tokenAddress,
+                                                 @Query("acct") String accountAddress,
+                                                 @Query("page") int page,
+                                                 @Query("count") int count);
 }

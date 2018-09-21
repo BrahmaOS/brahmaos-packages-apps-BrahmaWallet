@@ -13,6 +13,11 @@ public class BrahmaConst {
     public static final int APP_ID = 1;
     public static final String IPFS_BASE_URL = "https://ipfs.io/";
     public static final String KYBER_NETWORK_URL = "https://tracker.kyber.network/";
+    public static final String IMAGE_BASE_URL = "https://img.static.brahmaos.io/";
+    public static final String PAGE_BASE_URL = "https://wallet.apps.brahmaos.io/";
+    public static final String HELP_PREFIX = "help/";
+    public static final String TOKEN_ICON_PREFIX = "tokens/icon/";
+    public static final String TOKEN_ICON_SUFFIX = "-128x128.png";
     public static final String IPFS_PREFIX = "ipfs/";
     public static final int DEFAULT_TOKEN_COUNT = 20;
     public static final int DEFAULT_TOKEN_SHOW_FLAG = 1;
@@ -28,14 +33,15 @@ public class BrahmaConst {
     public static final int DEFAULT_GAS_PRICE = 20;
     public static final BigDecimal DEFAULT_FEE = BigDecimal.valueOf(0.000400000);
 
-    public static final String MAINNET_URL = "https://mainnet.infura.io/Gy3Csyt4bzKIGsctm3g0";
-    public static final String ROPSTEN_TEST_URL = "https://ropsten.infura.io/Gy3Csyt4bzKIGsctm3g0";
-    public static final String INFURANET_TEST_URL = "https://infuranet.infura.io/Gy3Csyt4bzKIGsctm3g0";
-    public static final String KOVAN_TEST_URL = "https://kovan.infura.io/Gy3Csyt4bzKIGsctm3g0";
-    public static final String RINKEBY_TEST_URL = "https://rinkeby.infura.io/Gy3Csyt4bzKIGsctm3g0";
+    public static final String MAINNET_URL = "https://mainnet.infura.io";
+    public static final String ROPSTEN_TEST_URL = "https://ropsten.infura.io";
+    public static final String INFURANET_TEST_URL = "https://infuranet.infura.io";
+    public static final String KOVAN_TEST_URL = "https://kovan.infura.io";
+    public static final String RINKEBY_TEST_URL = "https://rinkeby.infura.io";
 
     public static final String KYBER_NETWORK_MAINNET = "0x818e6fecd516ecc3849daf6845e3ec868087b755";
     public static final String KYBER_NETWORK_ROPSTEN = "0x85ecDf8803c35a271a87ad918B5927E5cA6a56D2";
+    //public static final String TRANSACTION_ACCOUNT_ADDRESS = "0x50FC3e2B2276E3a58AA696B5112Aa10775d42bd6";
 
     public static final String LANGUAGE_ENGLISH = "1";
     public static final String LANGUAGE_CHINESE = "2";
@@ -51,4 +57,8 @@ public class BrahmaConst {
     public static final String PRIVACY_POLICY_PATH_EN = "https://ipfs.io/ipfs/QmbPfak4W1z9fwoX6dYEtNHBrsfSWZxbC5tz5m1bssh4Fm";
     public static final String SERVICE_PATH_ZH = "https://ipfs.io/ipfs/QmWBTYAXg5ceyGGZ8pcbvXyPneTs8ca4WwStzKY74vaxKT";
     public static final String SERVICE_PATH_EN = "https://ipfs.io/ipfs/Qmds3fqPhHZTYpXQ68e6MURXF9g3kn9BCyTRLhhQAYf2VL";
+    public static final String ETHERSCAN_BASE_URL = "https://etherscan.io/";
+
+    public static final Double MAIN_PAGE_HEADER_RATIO = 0.382;
+    public static final String FEEDBACK_URL = "https://github.com/BrahmaOS/wallet/issues";
 }

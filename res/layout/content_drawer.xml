@@ -5,54 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <android.support.constraint.ConstraintLayout
-        android:id="@+id/layout_new_account"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:layout_marginStart="@dimen/space_large"
-            android:layout_marginEnd="@dimen/space_large"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <TextView
-                android:id="@+id/sample_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/title_brahma_wallet"
-                android:textSize="@dimen/font_size_headline"
-                android:typeface="monospace"
-                android:textStyle="bold"/>
-            <TextView
-                android:id="@+id/test_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_smaller"
-                android:text="@string/brahma_wallet_desc" />
-
-            <Button
-                android:id="@+id/btn_create_account"
-                style="@style/MainButtonSingle"
-                android:layout_marginTop="@dimen/space_larger"
-                android:text="@string/action_create_account" />
-
-            <Button
-                android:id="@+id/btn_import_account"
-                style="@style/MainButtonSingle"
-                android:layout_marginTop="@dimen/space_larger"
-                android:layout_marginBottom="@dimen/space_larger"
-                android:text="@string/action_import_account" />
-
-        </LinearLayout>
-    </android.support.constraint.ConstraintLayout>
-
     <android.support.v4.widget.SwipeRefreshLayout
         android:visibility="visible"
         android:id="@+id/swipe_refresh_layout"
@@ -68,10 +20,15 @@
                 android:descendantFocusability="blocksDescendants"
                 android:orientation="vertical">
                 <LinearLayout
+                    android:id="@+id/layout_header"
                     android:layout_width="match_parent"
-                    android:layout_height="136dp"
+                    android:layout_height="200dp"
                     android:background="@drawable/home_header_bg1"
                     android:orientation="vertical">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
                     <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -88,7 +45,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:textAlignment="center"
-                                android:textSize="@dimen/font_size_subheading"
+                                android:textSize="@dimen/font_size_subtitle"
                                 android:textColor="@color/white"
                                 android:text="@string/total_assets"/>
                             <TextView
@@ -96,17 +53,20 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="@dimen/space_unit"
+                                android:textSize="@dimen/font_size_subtitle"
                                 android:textColor="@color/white"
                                 android:text="("/>
                             <TextView
                                 android:id="@+id/tv_money_unit"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:textSize="@dimen/font_size_subtitle"
                                 android:textColor="@color/white"
                                 android:text="@string/unit_cny"/>
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:textSize="@dimen/font_size_subtitle"
                                 android:textColor="@color/white"
                                 android:text=")"/>
                         </LinearLayout>
@@ -125,11 +85,13 @@
                             android:paddingEnd="@dimen/space_unit"
                             android:textColor="@color/color_test_network"/>
                     </RelativeLayout>
-
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingTop="@dimen/space_normal"
                         android:layout_gravity="center"
                         android:orientation="horizontal">
                         <TextView
@@ -138,7 +100,7 @@
                             android:layout_height="wrap_content"
                             android:textAlignment="center"
                             android:textColor="@color/white"
-                            android:textSize="@dimen/font_size_display1"
+                            android:textSize="@dimen/font_size_display2"
                             android:paddingEnd="@dimen/space_smaller"
                             android:text="@string/asymptotic"/>
                         <TextView
@@ -148,15 +110,19 @@
                             android:layout_height="wrap_content"
                             android:textAlignment="center"
                             android:textColor="@color/white"
-                            android:textSize="@dimen/font_size_display1"/>
+                            android:textSize="@dimen/font_size_display2"/>
                         <ImageView
                             android:id="@+id/iv_assets_visibility"
                             android:layout_marginStart="@dimen/space_small"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:layout_gravity="center_vertical"
                             android:src="@drawable/ic_open_eye"/>
                     </LinearLayout>
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"/>
                     <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

@@ -25,6 +25,10 @@
         <item name="colorControlNormal">#666666</item>
     </style>
 
+    <style name="ToolBarStyle" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:textSize">16sp</item>
+    </style>
+
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="MainToolbarTitleText" parent="@style/TextAppearance.Widget.AppCompat.Toolbar.Title"></style>
@@ -108,6 +112,13 @@
     <style name="anim_bottom_popupwindow">
         <item name="android:windowEnterAnimation">@anim/bottom_popupwindow_in</item>
         <item name="android:windowExitAnimation">@anim/bottom_popupwindow_out</item>
+    </style>
+
+    <style name="BrahmaProgressBarSmall" parent="@style/Widget.AppCompat.ProgressBar">
+        <item name="android:minWidth">24dp</item>
+        <item name="android:maxWidth">24dp</item>
+        <item name="android:minHeight">24dp</item>
+        <item name="android:maxHeight">24dp</item>
     </style>
 
 </resources>
