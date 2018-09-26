@@ -57,18 +57,23 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         android-support-v7-palette \
         android-support-v4 \
         junit \
-        bitcoinj \
+        bitcoinj-core \
         butterknife-annotations \
         butterknife-compiler \
         glide-compile \
         glide-disklrucache \
         zxing-core \
-        lambda-scrypt \
+	lambda-scrypt \
         okhttp-logging \
         retrofit2-adapter \
         retrofit2-converter \
         retrofit \
         web3j-core \
+	web3j-crypto \
+	web3j-abi \
+	web3j-rlp \
+	web3j-tuples \
+	web3j-utils \
         reactivex-rxjava \
         jackson \
         lifecycle-compiler \
@@ -76,7 +81,6 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         room-common \
         jackson-databind \
         jackson-core \
-        jackson-annotations \
         spongycastle-core \
         spongycastle-prov \
         glide-annotations \
@@ -85,9 +89,9 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         okio \
         httpclient \
         lifecycle-common \
-        room-migration
-
-
+        room-migration \
+	guava-18 \
+	protobuf-java
 
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-annotations
 
@@ -103,15 +107,13 @@ include $(BUILD_PACKAGE)
 
 include $(CLEAR_VARS)
 
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := bitcoinj:libs/bitcoinj-core-0.14.7.jar\
-                                        butterknife:libs/butterknife-8.5.1.aar \
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := butterknife:libs/butterknife-8.5.1.aar \
                                         butterknife-annotations:libs/butterknife-annotations-8.5.1.jar \
                                         butterknife-compiler:libs/butterknife-compiler-8.5.1.jar \
                                         glide-aar:libs/glide-4.7.1.aar \
                                         glide-compile:libs/glide-compiler-4.7.1.jar \
                                         glide-gifdecoder:libs/glide-gifdecoder-4.7.1.aar \
                                         glide-disklrucache:libs/glide-disklrucache-4.7.1.jar \
-                                        lambda-scrypt:libs/lambda-scrypt-1.4.0.jar \
                                         orhanobut-logger:libs/orhanobut-logger-1.15.aar \
                                         indexablerecyclerview:libs/yokeyword-indexablerecyclerview-1.3.0.aar \
                                         zxing-core:libs/zxing-core-3.3.2.jar \
@@ -125,7 +127,6 @@ LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := bitcoinj:libs/bitcoinj-core-0.14.7.jar\
                                         room-compiler:libs/room-compiler-1.0.0.jar \
                                         room-runtime:libs/room-runtime-1.0.0.aar \
                                         room-common:libs/room-common-1.0.0.jar \
-                                        jackson-annotations:libs/jackson-annotations-2.8.0.jar \
                                         lifecycle-livedata-core:libs/lifecycle-livedata-core-1.1.1.aar \
                                         persistence-db:libs/persistence-db-1.0.0.aar \
                                         glide-annotations:libs/glide-annotations-4.7.1.jar \
