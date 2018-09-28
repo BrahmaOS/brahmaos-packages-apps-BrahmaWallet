@@ -1,7 +1,6 @@
 package io.brahmaos.wallet.brahmawallet.ui.account;
 
 import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
@@ -14,16 +13,15 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
+import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
 import io.brahmaos.wallet.brahmawallet.service.BrahmaWeb3jService;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
+import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import rx.Observer;
@@ -38,43 +36,44 @@ public class AccountDetailActivity extends BaseActivity {
     }
 
     // UI references.
-    @BindView(R.id.iv_account_avatar)
-    ImageView ivAccountAvatar;
-    @BindView(R.id.layout_account_name)
-    RelativeLayout layoutAccountName;
-    @BindView(R.id.tv_account_name)
-    TextView tvAccountName;
-    @BindView(R.id.layout_account_address)
-    RelativeLayout layoutAccountAddress;
-    @BindView(R.id.tv_account_address)
-    TextView tvAccountAddress;
-    @BindView(R.id.layout_account_address_qrcode)
-    RelativeLayout layoutAccountAddressQRCode;
-    @BindView(R.id.tv_change_password)
-    TextView tvChangePassword;
-    @BindView(R.id.tv_export_private_key)
-    TextView tvExportPrivateKey;
-    @BindView(R.id.tv_export_keystore)
-    TextView tvExportKeystore;
-    @BindView(R.id.tv_delete_account)
-    TextView tvDeleteAccount;
+    private ImageView ivAccountAvatar;
+    private RelativeLayout layoutAccountName;
+    private TextView tvAccountName;
+    private RelativeLayout layoutAccountAddress;
+    private TextView tvAccountAddress;
+    private RelativeLayout layoutAccountAddressQRCode;
+    private TextView tvChangePassword;
+    private TextView tvExportPrivateKey;
+    private TextView tvExportKeystore;
+    private TextView tvDeleteAccount;
 
-    private int accountId;
+    private String accountAddress;
     private AccountEntity account;
-    private AccountViewModel mViewModel;
     private CustomProgressDialog progressDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account_detail);
-        ButterKnife.bind(this);
         showNavBackBtn();
-        accountId = getIntent().getIntExtra(IntentParam.PARAM_ACCOUNT_ID, 0);
-        if (accountId <= 0) {
+        initView();
+        accountAddress = getIntent().getStringExtra(IntentParam.PARAM_ACCOUNT_ADDRESS);
+        if (accountAddress == null || accountAddress.length() <= 0) {
             finish();
         }
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
+    }
+
+    private void initView() {
+        ivAccountAvatar = findViewById(R.id.iv_account_avatar);
+        layoutAccountName = findViewById(R.id.layout_account_name);
+        tvAccountName = findViewById(R.id.tv_account_name);
+        layoutAccountAddress = findViewById(R.id.layout_account_address);
+        tvAccountAddress = findViewById(R.id.tv_account_address);
+        layoutAccountAddressQRCode = findViewById(R.id.layout_account_address_qrcode);
+        tvChangePassword = findViewById(R.id.tv_change_password);
+        tvExportPrivateKey = findViewById(R.id.tv_export_private_key);
+        tvExportKeystore = findViewById(R.id.tv_export_keystore);
+        tvDeleteAccount = findViewById(R.id.tv_delete_account);
     }
 
     @Override
@@ -85,20 +84,26 @@ public class AccountDetailActivity extends BaseActivity {
         progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
         progressDialog.setCancelable(false);
 
-        mViewModel.getAccountById(accountId)
-                .observe(this, (AccountEntity accountEntity) -> {
-                    if (accountEntity != null) {
-                        account = accountEntity;
-                        initAccountInfo(accountEntity);
-                    }
-                });
+        account = MainService.getInstance().getAccountByAddress(accountAddress);
+        initAccountInfo(account);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (progressDialog != null) {
+            progressDialog.dismiss();
+        }
     }
 
     private void initAccountInfo(AccountEntity account) {
         ImageManager.showAccountAvatar(this, ivAccountAvatar, account);
         tvAccountName.setText(account.getName());
         tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
-
+        if (account.getId() == BrahmaConst.DEFAULT_WALLET_ACCOUNT_ID) {
+            tvChangePassword.setVisibility(View.GONE);
+            tvDeleteAccount.setVisibility(View.GONE);
+        }
         layoutAccountName.setOnClickListener(v -> {
             Intent intent = new Intent(this, ChangeAccountNameActivity.class);
             intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
@@ -143,6 +148,7 @@ public class AccountDetailActivity extends BaseActivity {
                     .setCancelable(true)
                     .setPositiveButton(R.string.confirm, (dialog, which) -> {
                         dialog.cancel();
+                        dialog.dismiss();
                         String password = ((EditText) dialogView.findViewById(R.id.et_password)).getText().toString();
                         exportPrivateKey(password);
                     })
@@ -165,9 +171,13 @@ public class AccountDetailActivity extends BaseActivity {
     }
 
     private void exportKeystore(String password) {
+        if (progressDialog != null) {
+            progressDialog.cancel();
+        }
+        BLog.d(tag(), "password-----------" + password);
         progressDialog.show();
-        BrahmaWeb3jService.getInstance()
-                .getKeystore(account.getFilename(), password)
+        MainService.getInstance()
+                .getKeystoreByPassword(account.getId(), password)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<String>() {
@@ -197,20 +207,27 @@ public class AccountDetailActivity extends BaseActivity {
 
                     @Override
                     public void onCompleted() {
-
+                        if (progressDialog != null) {
+                            progressDialog.cancel();
+                        }
                     }
                 });
     }
 
     private void exportPrivateKey(String password) {
+        if (progressDialog != null) {
+            progressDialog.cancel();
+        }
         progressDialog.show();
-        BrahmaWeb3jService.getInstance()
-                .getPrivateKeyByPassword(account.getFilename(), password)
+        BLog.d(tag(), "password-----------" + password);
+        MainService.getInstance()
+                .getPrivateKeyByPassword(account.getId(), password)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<String>() {
                     @Override
                     public void onNext(String privateKey) {
+                        BLog.d(tag(), "privateKey-----------" + privateKey);
                         if (progressDialog != null) {
                             progressDialog.cancel();
                         }
@@ -232,7 +249,9 @@ public class AccountDetailActivity extends BaseActivity {
 
                     @Override
                     public void onCompleted() {
-
+                        if (progressDialog != null) {
+                            progressDialog.cancel();
+                        }
                     }
                 });
     }
@@ -344,7 +363,8 @@ public class AccountDetailActivity extends BaseActivity {
         if (progressDialog != null) {
             progressDialog.show();
         }
-        mViewModel.deleteAccount(accountId).subscribeOn(Schedulers.io())
+        MainService.getInstance().deleteAccountByPassword(account.getId())
+                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(() -> {
                             progressDialog.cancel();

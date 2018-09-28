@@ -6,6 +6,18 @@ import android.content.Context;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.HDUtils;
+import org.bitcoinj.wallet.DeterministicKeyChain;
+import org.bitcoinj.wallet.DeterministicSeed;
+import org.bitcoinj.wallet.UnreadableWalletException;
+import org.spongycastle.util.encoders.Hex;
+import org.web3j.crypto.CipherException;
+import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.Wallet;
+import org.web3j.crypto.WalletFile;
+import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
@@ -37,8 +49,11 @@ import java.util.Map;
 import android.content.Context;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.util.DataCryptoUtils;
 import android.util.BrahmaConstants;
 import android.util.Log;
+
+import javax.crypto.BadPaddingException;
 
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.WalletApp;
@@ -118,6 +133,10 @@ public class MainService extends BaseService{
 
     public void setKyberTokenList(List<KyberToken> kyberTokenList) {
         this.kyberTokenList = kyberTokenList;
+    }
+
+    public List<AllTokenEntity> getAllTokenEntityList() {
+        return allTokenEntityList;
     }
 
     public AccountEntity getNewMnemonicAccount() {
@@ -326,6 +345,15 @@ public class MainService extends BaseService{
         return allAccounts;
     }
 
+    public AccountEntity getAccountByAddress(String address) {
+        for (AccountEntity accountEntity : allAccounts) {
+            if (accountEntity.getAddress().toLowerCase().equals(address.toLowerCase())) {
+                return accountEntity;
+            }
+        }
+        return null;
+    }
+
     public void loadAllAccounts() {
         final UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
         int userId = UserHandle.myUserId();
@@ -361,7 +389,7 @@ public class MainService extends BaseService{
     /*
      * Get all the token's assets for all accounts
      */
-    public Observable<List<AccountAssets>> loadTotalAccountAssets() {
+    /*public Observable<List<AccountAssets>> loadTotalAccountAssets() {
         return Observable.create(e -> {
             if (allAccounts != null && allAccounts.size() > 0 && mChosenTokens != null && mChosenTokens.size() > 0) {
                 BLog.i("view model", "start get account assets");
@@ -473,6 +501,92 @@ public class MainService extends BaseService{
                 }
             }
         });
+    }*/
+    public Observable<List<AccountAssets>> loadTotalAccountAssets() {
+        return Observable.create(e -> {
+            if (allAccounts != null && allAccounts.size() > 0 && mChosenTokens != null && mChosenTokens.size() > 0) {
+                BLog.i("view model", "start get account assets");
+                // init the assets
+                accountAssetsList = new ArrayList<>();
+                for (AccountEntity accountEntity : allAccounts) {
+                    for (TokenEntity tokenEntity : mChosenTokens) {
+                        if (tokenEntity.getShortName().equals("ETH")) {
+                            BrahmaWeb3jService.getInstance().getEthBalance(accountEntity)
+                                    .observable()
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(new Observer<EthGetBalance>() {
+                                        @Override
+                                        public void onCompleted() {
+                                        }
+
+                                        @Override
+                                        public void onError(Throwable throwable) {
+                                            throwable.printStackTrace();
+                                            BLog.e("view model", throwable.getMessage());
+                                            AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
+                                            checkTokenAsset(assets);
+                                            e.onNext(accountAssetsList);
+                                        }
+
+                                        @Override
+                                        public void onNext(EthGetBalance ethGetBalance) {
+                                            BLog.i(tag(), "ethGetBalance" + ethGetBalance.toString());
+                                            if (ethGetBalance != null && ethGetBalance.getBalance() != null) {
+                                                BLog.i("view model", "the " + accountEntity.getName() + "'s " +
+                                                        tokenEntity.getName() + " balance is " + ethGetBalance.getBalance().toString());
+                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, ethGetBalance.getBalance());
+                                                checkTokenAsset(assets);
+                                            } else {
+                                                BLog.w("view model", "the " + accountEntity.getName() + "'s " +
+                                                        tokenEntity.getName() + " balance is null");
+                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
+                                                checkTokenAsset(assets);
+                                            }
+                                            e.onNext(accountAssetsList);
+                                        }
+                                    });
+                        } else {
+                            BrahmaWeb3jService.getInstance().getTokenBalance(accountEntity, tokenEntity)
+                                    .observable()
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(new Observer<EthCall>() {
+                                        @Override
+                                        public void onCompleted() {
+                                        }
+
+                                        @Override
+                                        public void onError(Throwable throwable) {
+                                            throwable.printStackTrace();
+                                            BLog.e("view model", throwable.getMessage());
+                                            AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
+                                            checkTokenAsset(assets);
+                                            e.onNext(accountAssetsList);
+                                        }
+
+                                        @Override
+                                        public void onNext(EthCall ethCall) {
+                                            BLog.i(tag(), "ethCall----" + ethCall.toString());
+                                            if (ethCall != null && ethCall.getValue() != null) {
+                                                BLog.i("view model", "the " + accountEntity.getName() + "'s " +
+                                                        tokenEntity.getName() + " balance is " + ethCall.getValue());
+                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, Numeric.decodeQuantity(ethCall.getValue()));
+                                                checkTokenAsset(assets);
+                                            } else {
+                                                BLog.w("view model", "the " + accountEntity.getName() + "'s " +
+                                                        tokenEntity.getName() + " balance is null");
+                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
+                                                checkTokenAsset(assets);
+                                            }
+                                            e.onNext(accountAssetsList);
+                                        }
+                                    });
+                        }
+                    }
+                }
+            }
+        });
     }
 
     /*
@@ -488,5 +602,63 @@ public class MainService extends BaseService{
             }
         }
         accountAssetsList.add(assets);
+    }
+
+    public Observable<String> getPrivateKeyByPassword(int userId, String password) {
+        return Observable.create(e -> {
+            try {
+                UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
+                String cryptoedMne = um.getUserDefaultMnemonicHex(userId);
+                DataCryptoUtils dc = new DataCryptoUtils();
+                String mnemonics = dc.aes128Decrypt(cryptoedMne, password);
+                long timeSeconds = System.currentTimeMillis() / 1000;
+                DeterministicSeed seed = new DeterministicSeed(mnemonics, null, "", timeSeconds);
+                DeterministicKeyChain chain = DeterministicKeyChain.builder().seed(seed).build();
+                List<ChildNumber> keyPath = HDUtils.parsePath("M/44H/60H/0H/0/0");
+                DeterministicKey key = chain.getKeyByPath(keyPath, true);
+                BigInteger privateKey = key.getPrivKey();
+                if (WalletUtils.isValidPrivateKey(privateKey.toString(16))) {
+                    e.onNext(privateKey.toString(16));
+                } else {
+                    e.onNext("");
+                }
+            } catch (Exception e1) {
+                e1.printStackTrace();
+                e.onError(e1);
+            }
+            e.onCompleted();
+        });
+    }
+
+    public Observable<String> getKeystoreByPassword(int userId, String password) {
+        return Observable.create(e -> {
+            try {
+                UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
+                String cryptoedMne = um.getUserDefaultMnemonicHex(userId);
+                long timeSeconds = System.currentTimeMillis() / 1000;
+                DataCryptoUtils dc = new DataCryptoUtils();
+                String mnemonics = dc.aes128Decrypt(cryptoedMne, password);
+                DeterministicSeed seed = new DeterministicSeed(mnemonics, null, "", timeSeconds);
+                DeterministicKeyChain chain = DeterministicKeyChain.builder().seed(seed).build();
+                List<ChildNumber> keyPath = HDUtils.parsePath("M/44H/60H/0H/0/0");
+                DeterministicKey key = chain.getKeyByPath(keyPath, true);
+                BigInteger privateKey = key.getPrivKey();
+                ECKeyPair ecKeyPair = ECKeyPair.create(privateKey);
+                WalletFile walletFile = Wallet.createLight(password, ecKeyPair);
+                ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
+                String keystore = objectMapper.writeValueAsString(walletFile);
+                e.onNext(keystore);
+            } catch (Exception e1) {
+                e1.printStackTrace();
+                e.onError(e1);
+            }
+            e.onCompleted();
+        });
+    }
+
+    public Completable deleteAccountByPassword(int userId) {
+        return Completable.fromAction(() -> {
+
+        });
     }
 }

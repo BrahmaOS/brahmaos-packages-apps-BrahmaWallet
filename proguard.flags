@@ -1,0 +1,1 @@
+-keep class org.web3j.protocol.core.methods.response.Log

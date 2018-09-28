@@ -11,6 +11,7 @@ import java.util.ArrayList;
 public class BrahmaConst {
 
     public static final int APP_ID = 1;
+    public static final int DEFAULT_WALLET_ACCOUNT_ID = 0;
     public static final String IPFS_BASE_URL = "https://ipfs.io/";
     public static final String KYBER_NETWORK_URL = "https://tracker.kyber.network/";
     public static final String IMAGE_BASE_URL = "https://img.static.brahmaos.io/";

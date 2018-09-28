@@ -1,7 +1,6 @@
 package io.brahmaos.wallet.brahmawallet.ui.account;
 
 import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -25,8 +24,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
@@ -38,7 +35,6 @@ import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 
@@ -51,11 +47,9 @@ public class AccountsActivity extends BaseActivity {
     public static final int REQ_IMPORT_ACCOUNT = 20;
 
     // UI references.
-    @BindView(R.id.accounts_recycler)
-    RecyclerView recyclerViewAccounts;
+    private RecyclerView recyclerViewAccounts;
     private CustomProgressDialog progressDialog;
 
-    private AccountViewModel mViewModel;
     private List<AccountEntity> accounts = new ArrayList<>();
     private List<AccountAssets> accountAssetsList = new ArrayList<>();
     private List<CryptoCurrency> cryptoCurrencies = new ArrayList<>();
@@ -64,9 +58,8 @@ public class AccountsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_accounts);
-        ButterKnife.bind(this);
         showNavBackBtn();
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
+        recyclerViewAccounts = findViewById(R.id.accounts_recycler);
     }
 
     @Override
@@ -76,15 +69,8 @@ public class AccountsActivity extends BaseActivity {
         recyclerViewAccounts.setLayoutManager(layoutManager);
         recyclerViewAccounts.setAdapter(new AccountRecyclerAdapter());
 
-        mViewModel.getAccounts().observe(this, accountEntities -> {
-            if (accountEntities == null || accountEntities.size() < 1) {
-                accounts = new ArrayList<>();
-                finish();
-            } else {
-                accounts = accountEntities;
-                recyclerViewAccounts.getAdapter().notifyDataSetChanged();
-            }
-        });
+        accounts = MainService.getInstance().getAllAccounts();
+        recyclerViewAccounts.getAdapter().notifyDataSetChanged();
 
         accountAssetsList = MainService.getInstance().getAccountAssetsList();
         cryptoCurrencies = MainService.getInstance().getCryptoCurrencies();
@@ -125,18 +111,6 @@ public class AccountsActivity extends BaseActivity {
                 progressDialog.setCancelable(false);
                 //progressDialog.show();
                 BLog.i(tag(), "import account success");
-                mViewModel.getTokens().observe(this, tokenEntities -> {
-                    BLog.i(tag(), "get all tokens for get total account assets");
-                });
-                mViewModel.getAssets().observe(this, (List<AccountAssets> accountAssets) -> {
-                    BLog.i(tag(), "the assets length is: " + accountAssets);
-                    if (accountAssets != null && accountAssets.size() > 0) {
-                        BLog.i(tag(), "the assets length is: " + accountAssets.size());
-                        progressDialog.cancel();
-                        accountAssetsList = accountAssets;
-                        recyclerViewAccounts.getAdapter().notifyDataSetChanged();
-                    }
-                });
             }
         }
 
@@ -155,28 +129,8 @@ public class AccountsActivity extends BaseActivity {
             rootView.setOnClickListener(v -> {
                 int position = recyclerViewAccounts.getChildAdapterPosition(v);
                 AccountEntity account = accounts.get(position);
-                BLog.i(tag(), account.getFilename());
-                if (account.getAddress() != null && account.getAddress().length() > 0) {
-                    File file = new File(getFilesDir() + "/" +  account.getFilename());
-                    if (file != null) {
-                        FileInputStream fis = null;
-                        try {
-                            fis = new FileInputStream(file);
-                            int length = fis.available();
-                            byte [] buffer = new byte[length];
-                            fis.read(buffer);
-                            String encoded = new String(buffer);
-                            fis.close();
-                            BLog.i(tag(), file.getAbsolutePath() + "---:" + encoded);
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
                 Intent intent = new Intent(AccountsActivity.this, AccountAssetsActivity.class);
-                intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
+                intent.putExtra(IntentParam.PARAM_ACCOUNT_ADDRESS, account.getAddress());
                 startActivity(intent);
             });
             return new ItemViewHolder(rootView);

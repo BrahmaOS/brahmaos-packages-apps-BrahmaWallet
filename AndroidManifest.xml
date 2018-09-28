@@ -109,6 +109,11 @@
             android:launchMode="singleInstance"
             android:theme="@style/FadeTheme" />
         <activity android:name=".ui.transfer.InstantExchangeActivity"/>
+        <activity android:name=".ui.transaction.TransactionsActivity"/>
+        <activity android:name=".ui.transaction.EthTransactionsActivity"/>
+        <activity android:name=".ui.transaction.EtherscanTxsActivity"/>
+        <activity android:name=".ui.transaction.EtherscanTxDetailActivity"/>
+        <activity android:name=".ui.transaction.TransactionDetailActivity"/>
     </application>
 
 </manifest>

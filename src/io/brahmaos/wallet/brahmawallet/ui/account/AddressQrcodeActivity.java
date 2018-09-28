@@ -4,17 +4,13 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
@@ -24,12 +20,9 @@ import io.brahmaos.wallet.util.QRCodeUtil;
 public class AddressQrcodeActivity extends BaseActivity {
 
     private AccountEntity account;
-    @BindView(R.id.iv_address_code)
-    ImageView ivAddressCode;
-    @BindView(R.id.tv_account_address)
-    TextView tvAccountAddress;
-    @BindView(R.id.btn_copy_address)
-    Button btnCopyAddress;
+    private ImageView ivAddressCode;
+    private TextView tvAccountAddress;
+    private Button btnCopyAddress;
     @Override
     protected String tag() {
         return AddressQrcodeActivity.class.getName();
@@ -39,7 +32,9 @@ public class AddressQrcodeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_address_qrcode);
-        ButterKnife.bind(this);
+        ivAddressCode = findViewById(R.id.iv_address_code);
+        tvAccountAddress = findViewById(R.id.tv_account_address);
+        btnCopyAddress = findViewById(R.id.btn_copy_address);
         showNavBackBtn();
         account = (AccountEntity) getIntent().getSerializableExtra(IntentParam.PARAM_ACCOUNT_INFO);
         if (account == null) {

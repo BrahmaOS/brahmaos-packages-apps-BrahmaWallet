@@ -47,7 +47,7 @@ LOCAL_AAPT_FLAGS := \
 
 #for jars
 LOCAL_STATIC_JAVA_LIBRARIES := \
-    android-common \
+        android-common \
         android-support-design \
         android-support-transition \
         android-support-v13 \
@@ -63,17 +63,18 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         glide-compile \
         glide-disklrucache \
         zxing-core \
-	lambda-scrypt \
+	    lambda-scrypt \
         okhttp-logging \
         retrofit2-adapter \
         retrofit2-converter \
         retrofit \
+        guava-18 \
         web3j-core \
-	web3j-crypto \
-	web3j-abi \
-	web3j-rlp \
-	web3j-tuples \
-	web3j-utils \
+	    web3j-crypto \
+	    web3j-abi \
+	    web3j-rlp \
+	    web3j-tuples \
+	    web3j-utils \
         reactivex-rxjava \
         jackson \
         lifecycle-compiler \
@@ -90,8 +91,8 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         httpclient \
         lifecycle-common \
         room-migration \
-	guava-18 \
-	protobuf-java
+	    slf4j-jdk14 \
+	    protobuf-java
 
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-annotations
 
@@ -134,5 +135,7 @@ LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := butterknife:libs/butterknife-8.5.1.aar \
                                         httpclient:libs/httpclient-4.4.1.2.jar \
                                         persistence-db-framework:libs/persistence-db-framework-1.0.0.aar \
                                         room-migration:libs/room-migration-1.0.0.jar
+
+LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 
 include $(BUILD_MULTI_PREBUILT)

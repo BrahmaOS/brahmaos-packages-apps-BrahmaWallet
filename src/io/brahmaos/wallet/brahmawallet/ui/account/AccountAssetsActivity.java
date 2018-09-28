@@ -1,7 +1,6 @@
 package io.brahmaos.wallet.brahmawallet.ui.account;
 
 import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -22,25 +21,18 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.hwangjr.rxbus.RxBus;
-import com.hwangjr.rxbus.annotation.Subscribe;
-import com.hwangjr.rxbus.annotation.Tag;
-import com.hwangjr.rxbus.thread.EventThread;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
-import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
 import io.brahmaos.wallet.brahmawallet.model.AccountAssets;
 import io.brahmaos.wallet.brahmawallet.model.CryptoCurrency;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
@@ -64,30 +56,19 @@ public class AccountAssetsActivity extends BaseActivity {
     public static final int REQ_CODE_TRANSFER = 10;
 
     // UI references.
-    @BindView(R.id.layout_account_info)
-    RelativeLayout mLayoutAccountInfo;
-    @BindView(R.id.assets_recycler)
-    RecyclerView recyclerViewAssets;
-    @BindView(R.id.iv_account_avatar)
-    ImageView ivAccountAvatar;
-    @BindView(R.id.tv_account_name)
-    TextView tvAccountName;
-    @BindView(R.id.tv_account_address)
-    TextView tvAccountAddress;
-    @BindView(R.id.tv_total_assets)
-    TextView tvTotalAssets;
-    @BindView(R.id.tv_currency_unit)
-    TextView tvCurrencyUnit;
-    @BindView(R.id.layout_app_bar)
-    AppBarLayout appBarLayout;
-    @BindView(R.id.layout_collapsing_toolbar)
-    CollapsingToolbarLayout collapsingToolbarLayout;
-    @BindView(R.id.iv_account_bg)
-    ImageView ivAccountBg;
+    private RelativeLayout mLayoutAccountInfo;
+    private RecyclerView recyclerViewAssets;
+    private ImageView ivAccountAvatar;
+    private TextView tvAccountName;
+    private TextView tvAccountAddress;
+    private TextView tvTotalAssets;
+    private TextView tvCurrencyUnit;
+    private AppBarLayout appBarLayout;
+    private CollapsingToolbarLayout collapsingToolbarLayout;
+    private ImageView ivAccountBg;
 
-    private int accountId;
+    private String accountAddress;
     private AccountEntity account;
-    private AccountViewModel mViewModel;
     private List<TokenEntity> tokenEntities = new ArrayList<>();
     private List<AccountAssets> accountAssetsList = new ArrayList<>();
     private List<CryptoCurrency> cryptoCurrencies = new ArrayList<>();
@@ -97,11 +78,10 @@ public class AccountAssetsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account_assets);
-        ButterKnife.bind(this);
         showNavBackBtn();
-        RxBus.get().register(this);
-        accountId = getIntent().getIntExtra(IntentParam.PARAM_ACCOUNT_ID, 0);
-        if (accountId <= 0) {
+        initView();
+        accountAddress = getIntent().getStringExtra(IntentParam.PARAM_ACCOUNT_ADDRESS);
+        if (accountAddress == null || accountAddress.length() <= 1) {
             finish();
         }
         String currencyUnit = BrahmaConfig.getInstance().getCurrencyUnit();
@@ -117,35 +97,36 @@ public class AccountAssetsActivity extends BaseActivity {
         // Solve the sliding lag problem
         recyclerViewAssets.setHasFixedSize(true);
         recyclerViewAssets.setNestedScrollingEnabled(false);
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
         cryptoCurrencies = MainService.getInstance().getCryptoCurrencies();
         accountAssetsList = MainService.getInstance().getAccountAssetsList();
 
         appBarLayout.setExpanded(true);
     }
 
+    private void initView() {
+        mLayoutAccountInfo = findViewById(R.id.layout_account_info);
+        recyclerViewAssets = findViewById(R.id.assets_recycler);
+        ivAccountAvatar = findViewById(R.id.iv_account_avatar);
+        tvAccountName = findViewById(R.id.tv_account_name);
+        tvAccountAddress = findViewById(R.id.tv_account_address);
+        tvTotalAssets = findViewById(R.id.tv_total_assets);
+        tvCurrencyUnit = findViewById(R.id.tv_currency_unit);
+        appBarLayout = findViewById(R.id.layout_app_bar);
+        collapsingToolbarLayout = findViewById(R.id.layout_collapsing_toolbar);
+        ivAccountBg = findViewById(R.id.iv_account_bg);
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
-        mViewModel.getAccountById(accountId)
-                .observe(this, (AccountEntity accountEntity) -> {
-                    if (accountEntity != null) {
-                        account = accountEntity;
-                        initView();
-                        initAssets();
-                        mViewModel.getTokens().observe(this, entities -> {
-                            if (entities != null) {
-                                tokenEntities = entities;
-                                recyclerViewAssets.getAdapter().notifyDataSetChanged();
-                            }
-                        });
-                    } else {
-                        finish();
-                    }
-                });
+        account = MainService.getInstance().getAccountByAddress(accountAddress);
+        initData();
+        initAssets();
+        tokenEntities = MainService.getInstance().getAllChosenTokens();;
+        recyclerViewAssets.getAdapter().notifyDataSetChanged();
     }
 
-    private void initView() {
+    private void initData() {
         ImageManager.showAccountAvatar(AccountAssetsActivity.this, ivAccountAvatar, account);
         ImageManager.showAccountBackground(AccountAssetsActivity.this, ivAccountBg, account);
         tvAccountName.setText(account.getName());
@@ -153,7 +134,7 @@ public class AccountAssetsActivity extends BaseActivity {
 
         mLayoutAccountInfo.setOnClickListener(v -> {
             Intent intent = new Intent(this, AccountDetailActivity.class);
-            intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
+            intent.putExtra(IntentParam.PARAM_ACCOUNT_ADDRESS, account.getAddress());
             startActivity(intent);
         });
 
@@ -219,35 +200,6 @@ public class AccountAssetsActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        RxBus.get().unregister(this);
-    }
-
-    @Subscribe(
-            thread = EventThread.MAIN_THREAD,
-            tags = {
-                    @Tag(EventTypeDef.ACCOUNT_ASSETS_TRANSFER)
-            }
-    )
-    public void refreshAssets(String status) {
-        BLog.i(tag(), "transfer success");
-        mViewModel.getAccounts().observe(this, accountEntities -> {
-            BLog.i(tag(), "get all accounts for get total account assets");
-        });
-        customProgressDialog = new CustomProgressDialog(this, R.style.CustomProgressDialogStyle, getString(R.string.sync));
-        customProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        customProgressDialog.setCancelable(false);
-        mViewModel.getAssets().observe(this, (List<AccountAssets> accountAssets) -> {
-            customProgressDialog.show();
-            if (accountAssets != null) {
-                BLog.i(tag(), "the assets length is: " + accountAssets.size());
-                customProgressDialog.cancel();
-                accountAssetsList = accountAssets;
-                initAssets();
-                recyclerViewAssets.getAdapter().notifyDataSetChanged();
-
-                RxBus.get().post(EventTypeDef.ACCOUNT_ASSETS_CHANGE, "succ");
-            }
-        });
     }
 
     /**

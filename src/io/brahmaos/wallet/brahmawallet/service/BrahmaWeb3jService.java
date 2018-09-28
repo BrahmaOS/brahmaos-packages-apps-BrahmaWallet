@@ -1,6 +1,9 @@
 package io.brahmaos.wallet.brahmawallet.service;
 
 import android.app.Application;
+import android.content.Context;
+import android.os.UserManager;
+import android.util.DataCryptoUtils;
 import android.util.Log;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +11,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.crypto.HDUtils;
+import org.bitcoinj.wallet.DeterministicKeyChain;
+import org.bitcoinj.wallet.DeterministicSeed;
+import org.bitcoinj.wallet.UnreadableWalletException;
+import org.spongycastle.util.encoders.Hex;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.TypeReference;
@@ -25,6 +35,7 @@ import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Wallet;
 import org.web3j.crypto.WalletFile;
 import org.web3j.crypto.WalletUtils;
+import org.web3j.crypto.ECKeyPair;
 import org.web3j.protocol.ObjectMapperFactory;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jFactory;
@@ -37,7 +48,6 @@ import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
 import org.web3j.protocol.core.methods.response.EthSendTransaction;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.protocol.exceptions.TransactionTimeoutException;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.Contract;
 import org.web3j.tx.ManagedTransaction;
@@ -121,10 +131,6 @@ public class BrahmaWeb3jService extends BaseService{
     public Request<?, EthGetBalance> getEthBalance(AccountEntity account) {
         try {
             ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-            Log.i(tag(), "=== 01 => " + objectMapper.getSerializationConfig());
-            Log.i(tag(), "=== 02 => " + objectMapper.getSerializerFactory());
-            Log.i(tag(), "=== 03 => " + objectMapper.getSerializerProvider());
-            Log.i(tag(), "=== 04 => " + objectMapper.getSerializerProvider().findTypedValueSerializer(org.web3j.protocol.core.Request.class, true, null));
             Web3j web3 = Web3jFactory.build(
                     new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
             return web3.ethGetBalance(account.getAddress(), DefaultBlockParameterName.LATEST);
@@ -169,8 +175,7 @@ public class BrahmaWeb3jService extends BaseService{
                 e.onNext(1);
                 Web3j web3 = Web3jFactory.build(
                         new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
-                Credentials credentials = WalletUtils.loadCredentials(
-                        password, context.getFilesDir() + "/" +  account.getFilename());
+                Credentials credentials = getEthAccountCredetials(account, password);
                 BLog.i(tag(), "load credential success");
                 e.onNext(2);
                 BigDecimal gasPriceWei = Convert.toWei(gasPrice, Convert.Unit.GWEI);
@@ -199,11 +204,6 @@ public class BrahmaWeb3jService extends BaseService{
                             break;
                         }
                     }
-                    if (transferReceipt == null) {
-                        throw new TransactionTimeoutException("Transaction receipt was not generated after "
-                                + ((SLEEP_DURATION * ATTEMPTS) / 1000
-                                + " seconds for transaction: " + transactionHash));
-                    }
 
                     BLog.i(tag(), "Transaction complete, view it at https://rinkeby.etherscan.io/tx/"
                             + transferReceipt.getTransactionHash());
@@ -227,7 +227,7 @@ public class BrahmaWeb3jService extends BaseService{
                     BLog.i(tag(), "===> transactionHash: " + transactionHash);
                 }
                 e.onNext(10);
-            } catch (IOException | CipherException | TransactionTimeoutException | InterruptedException e1) {
+            } catch (IOException | UnreadableWalletException | InterruptedException e1) {
                 e1.printStackTrace();
                 e.onError(e1);
             }
@@ -270,74 +270,22 @@ public class BrahmaWeb3jService extends BaseService{
         return WalletUtils.isValidPrivateKey(privateKey);
     }
 
-    public Observable<String> getKeystore(String fileName, String password) {
-        return Observable.create(e -> {
-            try {
-                Credentials credentials = WalletUtils.loadCredentials(
-                        password, context.getFilesDir() + "/" +  fileName);
-                BigInteger privateKey = credentials.getEcKeyPair().getPrivateKey();
-                BLog.e("viewModel", "the private key is:" + privateKey.toString(16));
-                if (WalletUtils.isValidPrivateKey(privateKey.toString(16))) {
-                    File file = new File(context.getFilesDir() + "/" +  fileName);
-                    FileInputStream fis = new FileInputStream(file);
-                    int length = fis.available();
-                    byte [] buffer = new byte[length];
-                    fis.read(buffer);
-                    String keystore = new String(buffer);
-                    fis.close();
-                    e.onNext(keystore);
-                } else {
-                    e.onNext("");
-                }
-            } catch (IOException | CipherException e1) {
-                e1.printStackTrace();
-                e.onError(e1);
-            }
-            e.onCompleted();
-        });
-    }
-
-    /**
-     *  Get the hash value of the toke list based on the ReliableTokens contract address
-     */
-    public Observable<String> getTokensHash() {
-        return Observable.create(e -> {
-            try {
-                Web3j web3 = Web3jFactory.build(
-                        new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
-                ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-                WalletFile walletFile = objectMapper.readValue(BrahmaConst.DEFAULT_KEYSTORE, WalletFile.class);
-                Credentials credentials = Credentials.create(Wallet.decrypt("654321", walletFile));
-
-                TransactionManager transactionManager = new RawTransactionManager(web3, credentials);
-                Function function = new Function("getLatestFileHash",
-                        Arrays.<Type>asList(),
-                        Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}));
-                String encodedFunction = FunctionEncoder.encode(function);
-                org.web3j.protocol.core.methods.response.EthCall ethCall = web3.ethCall(
-                        Transaction.createEthCallTransaction(
-                                transactionManager.getFromAddress(), BrahmaConst.RELIABLE_TOKENS_ADDRESS, encodedFunction),
-                        DefaultBlockParameterName.LATEST)
-                        .send();
-
-                String contractHashValue = ethCall.getValue();
-                List<Type> values = FunctionReturnDecoder.decode(contractHashValue, function.getOutputParameters());
-                Utf8String result = null;
-                if (!values.isEmpty()) {
-                    result = (Utf8String) values.get(0);
-                }
-                if (result == null) {
-                    throw new Exception("Empty value (0x) returned from contract");
-                }
-                String tokenListIpfsHash = result.toString();
-                BLog.i(tag(), "New value stored in remote smart contract: " + tokenListIpfsHash);
-                e.onNext(tokenListIpfsHash);
-            } catch (Exception e1) {
-                e1.printStackTrace();
-                e.onError(e1);
-            }
-            e.onCompleted();
-        });
+    public Credentials getEthAccountCredetials(AccountEntity account, String password) throws UnreadableWalletException {
+        UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
+        String cryptoedMne = um.getUserDefaultMnemonicHex(account.getId());
+        DataCryptoUtils dc = new DataCryptoUtils();
+        String mnemonics = dc.aes128Decrypt(cryptoedMne, password);
+        if (mnemonics == null) {
+            return null;
+        }
+        long timeSeconds = System.currentTimeMillis() / 1000;
+        DeterministicSeed seed = new DeterministicSeed(mnemonics, null, "", timeSeconds);
+        DeterministicKeyChain chain = DeterministicKeyChain.builder().seed(seed).build();
+        List<ChildNumber> keyPath = HDUtils.parsePath("M/44H/60H/0H/0/0");
+        DeterministicKey key = chain.getKeyByPath(keyPath, true);
+        BigInteger privateKey = key.getPrivKey();
+        ECKeyPair ecKeyPair = ECKeyPair.create(privateKey);
+        return Credentials.create(ecKeyPair);
     }
 
     /**
@@ -445,8 +393,7 @@ public class BrahmaWeb3jService extends BaseService{
                 e.onNext(1);
                 Web3j web3 = Web3jFactory.build(
                         new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
-                Credentials credentials = WalletUtils.loadCredentials(
-                        password, context.getFilesDir() + "/" +  account.getFilename());
+                Credentials credentials = getEthAccountCredetials(account, password);
                 BLog.i(tag(), "load credential success");
                 e.onNext(2);
                 BigDecimal gasPriceWei = Convert.toWei(gasPrice, Convert.Unit.GWEI);
@@ -484,7 +431,7 @@ public class BrahmaWeb3jService extends BaseService{
                 String transactionHash = transactionResponse.getTransactionHash();
                 BLog.i(tag(), "===> transactionHash: " + transactionHash);
                 e.onNext(10);
-            } catch (IOException | CipherException e1) {
+            } catch (UnreadableWalletException | IOException e1) {
                 e1.printStackTrace();
                 e.onError(e1);
             }
@@ -505,8 +452,7 @@ public class BrahmaWeb3jService extends BaseService{
                 e.onNext(1);
                 Web3j web3 = Web3jFactory.build(
                         new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
-                Credentials credentials = WalletUtils.loadCredentials(
-                        password, context.getFilesDir() + "/" +  account.getFilename());
+                Credentials credentials = getEthAccountCredetials(account, password);
                 BLog.i(tag(), "load credential success");
                 e.onNext(2);
                 BigDecimal gasPriceWei = Convert.toWei(gasPrice, Convert.Unit.GWEI);
@@ -535,7 +481,7 @@ public class BrahmaWeb3jService extends BaseService{
                 String transactionHash = transactionResponse.getTransactionHash();
                 BLog.i(tag(), "===> transactionHash: " + transactionHash);
                 e.onNext(10);
-            } catch (IOException | CipherException e1) {
+            } catch (UnreadableWalletException | IOException e1) {
                 e1.printStackTrace();
                 e.onError(e1);
             }

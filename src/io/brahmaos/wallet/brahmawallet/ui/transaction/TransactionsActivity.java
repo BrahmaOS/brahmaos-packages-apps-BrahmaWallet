@@ -25,8 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
@@ -51,24 +49,14 @@ public class TransactionsActivity extends BaseActivity {
     public static final int REQ_CODE_TRANSFER = 10;
 
     // UI references.
-    @BindView(R.id.swipe_refresh_layout)
-    SwipeRefreshLayout swipeRefreshLayout;
-    @BindView(R.id.sv_content)
-    NestedScrollView nestedScrollView;
-    @BindView(R.id.iv_account_avatar)
-    ImageView ivAccountAvatar;
-    @BindView(R.id.tv_account_name)
-    TextView tvAccountName;
-    @BindView(R.id.tv_account_address)
-    TextView tvAccountAddress;
-
-    @BindView(R.id.transactions_recycler)
-    RecyclerView recyclerViewTransactions;
-    @BindView(R.id.layout_no_transactions)
-    LinearLayout layoutNoTransactions;
-
-    @BindView(R.id.fab)
-    FloatingActionButton fab;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private NestedScrollView nestedScrollView;
+    private ImageView ivAccountAvatar;
+    private TextView tvAccountName;
+    private TextView tvAccountAddress;
+    private RecyclerView recyclerViewTransactions;
+    private LinearLayout layoutNoTransactions;
+    private FloatingActionButton fab;
 
     private AccountEntity mAccount;
     private TokenEntity mToken;
@@ -81,7 +69,6 @@ public class TransactionsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transactions);
-        ButterKnife.bind(this);
         showNavBackBtn();
         mAccount = (AccountEntity) getIntent().getSerializableExtra(IntentParam.PARAM_ACCOUNT_INFO);
         mToken = (TokenEntity) getIntent().getSerializableExtra(IntentParam.PARAM_TOKEN_INFO);
@@ -90,10 +77,23 @@ public class TransactionsActivity extends BaseActivity {
             finish();
         }
         initView();
+        initData();
         getTokenTxList();
     }
 
     private void initView() {
+        // UI references.
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+        nestedScrollView = findViewById(R.id.sv_content);
+        ivAccountAvatar = findViewById(R.id.iv_account_avatar);
+        tvAccountName = findViewById(R.id.tv_account_name);
+        tvAccountAddress = findViewById(R.id.tv_account_address);
+        recyclerViewTransactions = findViewById(R.id.transactions_recycler);
+        layoutNoTransactions = findViewById(R.id.layout_no_transactions);
+        fab = findViewById(R.id.fab);
+    }
+
+    private void initData() {
         swipeRefreshLayout.setColorSchemeResources(R.color.master);
         swipeRefreshLayout.setOnRefreshListener(this::getLatestTokenTxList);
 

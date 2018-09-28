@@ -160,7 +160,7 @@ public class MainActivity extends BaseActivity
 
         swipeRefreshLayout.setOnRefreshListener(() -> {
             // get the latest assets
-            MainService.getInstance().loadTotalAccountAssets();
+            getAllAssets();
             // get Currencies
             getCryptoCurrents();
         });
@@ -301,9 +301,6 @@ public class MainActivity extends BaseActivity
 
         if (id == R.id.nav_accounts) {
             Intent intent = new Intent(this, AccountsActivity.class);
-            startActivity(intent);
-        } else if (id == R.id.nav_contacts) {
-            Intent intent = new Intent(this, ContactsActivity.class);
             startActivity(intent);
         } else if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);

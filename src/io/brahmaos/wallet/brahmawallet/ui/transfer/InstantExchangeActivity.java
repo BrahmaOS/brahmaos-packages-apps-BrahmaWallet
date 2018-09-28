@@ -2,7 +2,6 @@ package io.brahmaos.wallet.brahmawallet.ui.transfer;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -32,7 +31,6 @@ import android.widget.TextView;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.CipherException;
 import org.web3j.protocol.core.methods.response.EthCall;
-import org.web3j.protocol.exceptions.TransactionTimeoutException;
 import org.web3j.utils.Convert;
 import org.web3j.utils.Numeric;
 
@@ -41,8 +39,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
@@ -58,7 +54,6 @@ import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.HelpActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
 import io.brahmaos.wallet.brahmawallet.view.CustomStatusView;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import rx.Observer;
@@ -68,56 +63,33 @@ import rx.schedulers.Schedulers;
 public class InstantExchangeActivity extends BaseActivity {
 
     // UI references.
-    @BindView(R.id.iv_account_avatar)
-    ImageView ivAccountAvatar;
-    @BindView(R.id.tv_account_name)
-    TextView tvAccountName;
-    @BindView(R.id.tv_account_address)
-    TextView tvAccountAddress;
-    @BindView(R.id.tv_change_account)
-    TextView tvChangeAccount;
+    private ImageView ivAccountAvatar;
+    private TextView tvAccountName;
+    private TextView tvAccountAddress;
+    private TextView tvChangeAccount;
 
-    @BindView(R.id.tv_eth_balance)
-    TextView tvEthBalance;
-    @BindView(R.id.layout_erc20_token_balance)
-    RelativeLayout layoutErc20Token;
-    @BindView(R.id.tv_erc20_token_name)
-    TextView tvErc20TokenName;
-    @BindView(R.id.tv_erc20_token_balance)
-    TextView tvErc20TokenBalance;
+    private TextView tvEthBalance;
+    private RelativeLayout layoutErc20Token;
+    private TextView tvErc20TokenName;
+    private TextView tvErc20TokenBalance;
 
-    @BindView(R.id.tv_rate_send_token_num)
-    TextView tvRateSendTokenNum;
-    @BindView(R.id.tv_rate_send_token_name)
-    TextView tvRateSendTokenName;
-    @BindView(R.id.tv_rate_receive_token_num)
-    TextView tvRateReceiveTokenNum;
-    @BindView(R.id.tv_rate_receive_token_name)
-    TextView tvRateReceiveTokenName;
+    private TextView tvRateSendTokenNum;
+    private TextView tvRateSendTokenName;
+    private TextView tvRateReceiveTokenNum;
+    private TextView tvRateReceiveTokenName;
 
-    @BindView(R.id.et_send_token_num)
-    EditText etSendTokenNum;
-    @BindView(R.id.tv_send_token_name)
-    TextView tvSendTokenName;
-    @BindView(R.id.layout_send_token)
-    LinearLayout layoutSendToken;
-    @BindView(R.id.et_receive_token_num)
-    EditText etReceiveTokenNum;
-    @BindView(R.id.tv_receive_token_name)
-    TextView tvReceiveTokenName;
-    @BindView(R.id.layout_receive_token)
-    LinearLayout layoutReceiveToken;
+    private EditText etSendTokenNum;
+    private TextView tvSendTokenName;
+    private LinearLayout layoutSendToken;
+    private EditText etReceiveTokenNum;
+    private TextView tvReceiveTokenName;
+    private LinearLayout layoutReceiveToken;
 
-    @BindView(R.id.et_gas_price)
-    EditText etGasPrice;
-    @BindView(R.id.et_gas_limit)
-    EditText etGasLimit;
-
-    @BindView(R.id.btn_show_transfer_info)
-    Button btnShowTransfer;
+    private EditText etGasPrice;
+    private EditText etGasLimit;
+    private Button btnShowTransfer;
 
     private AccountEntity mAccount;
-    private AccountViewModel mViewModel;
     private List<AccountEntity> mAccounts = new ArrayList<>();
     private List<AccountAssets> mAccountAssetsList = new ArrayList<>();
     private List<KyberToken> mKyberTokens = new ArrayList<>();
@@ -145,7 +117,6 @@ public class InstantExchangeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_instant_exchange);
-        ButterKnife.bind(this);
         showNavBackBtn();
 
         mAccount = (AccountEntity) getIntent().getSerializableExtra(IntentParam.PARAM_ACCOUNT_INFO);
@@ -154,59 +125,45 @@ public class InstantExchangeActivity extends BaseActivity {
     }
 
     private void initView() {
+        ivAccountAvatar = findViewById(R.id.iv_account_avatar);
+        tvAccountName = findViewById(R.id.tv_account_name);
+        tvAccountAddress = findViewById(R.id.tv_account_address);
+        tvChangeAccount = findViewById(R.id.tv_change_account);
+
+        tvEthBalance = findViewById(R.id.tv_eth_balance);
+        layoutErc20Token = findViewById(R.id.layout_erc20_token_balance);
+        tvErc20TokenName = findViewById(R.id.tv_erc20_token_name);
+        tvErc20TokenBalance = findViewById(R.id.tv_erc20_token_balance);
+
+        tvRateSendTokenNum = findViewById(R.id.tv_rate_send_token_num);
+        tvRateSendTokenName = findViewById(R.id.tv_rate_send_token_name);
+        tvRateReceiveTokenNum = findViewById(R.id.tv_rate_receive_token_num);
+        tvRateReceiveTokenName = findViewById(R.id.tv_rate_receive_token_name);
+
+        etSendTokenNum = findViewById(R.id.et_send_token_num);
+        tvSendTokenName = findViewById(R.id.tv_send_token_name);
+        layoutSendToken = findViewById(R.id.layout_send_token);
+        etReceiveTokenNum = findViewById(R.id.et_receive_token_num);
+        tvReceiveTokenName = findViewById(R.id.tv_receive_token_name);
+        layoutReceiveToken = findViewById(R.id.layout_receive_token);
+        etGasPrice = findViewById(R.id.et_gas_price);
+        etGasLimit = findViewById(R.id.et_gas_limit);
+        btnShowTransfer = findViewById(R.id.btn_show_transfer_info);
+
         mAccountAssetsList = MainService.getInstance().getAccountAssetsList();
 
         etGasPrice.setText(String.valueOf(BrahmaConst.DEFAULT_GAS_PRICE));
         etGasLimit.setText(String.valueOf(BrahmaConst.DEFAULT_GAS_LIMIT));
         getGasPrice();
 
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
-        mViewModel.getAccounts().observe(this, accountEntities -> {
-            mAccounts = accountEntities;
-            if ((mAccount == null || mAccount.getAddress().length() == 0) &&
-                    accountEntities != null) {
-                mAccount = mAccounts.get(0);
-            }
-            if (mAccounts != null && mAccounts.size() > 1) {
-                tvChangeAccount.setVisibility(View.VISIBLE);
-            }
-            showAccountInfo(mAccount);
-        });
-        tvChangeAccount.setOnClickListener(v -> {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            View dialogView = getLayoutInflater().inflate(R.layout.dialog_account_list, null);
-            builder.setView(dialogView);
-            builder.setCancelable(true);
-            final AlertDialog alertDialog = builder.create();
-            alertDialog.show();
-
-            LinearLayout layoutAccountList = dialogView.findViewById(R.id.layout_accounts);
-
-            for (final AccountEntity account : mAccounts) {
-                final AccountItemView accountItemView = new AccountItemView();
-                accountItemView.layoutAccountItem = LayoutInflater.from(this).inflate(R.layout.dialog_list_item_account, null);
-                accountItemView.ivAccountAvatar = accountItemView.layoutAccountItem.findViewById(R.id.iv_account_avatar);
-                accountItemView.tvAccountName = accountItemView.layoutAccountItem.findViewById(R.id.tv_account_name);
-                accountItemView.tvAccountAddress = accountItemView.layoutAccountItem.findViewById(R.id.tv_account_address);
-                accountItemView.layoutDivider = accountItemView.layoutAccountItem.findViewById(R.id.layout_divider);
-
-                accountItemView.tvAccountName.setText(account.getName());
-                ImageManager.showAccountAvatar(this, accountItemView.ivAccountAvatar, account);
-                accountItemView.tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
-
-                accountItemView.layoutAccountItem.setOnClickListener(v1 -> {
-                    alertDialog.cancel();
-                    mAccount = account;
-                    showAccountInfo(account);
-                });
-
-                if (mAccounts.indexOf(account) == mAccounts.size() - 1) {
-                    accountItemView.layoutDivider.setVisibility(View.GONE);
-                }
-
-                layoutAccountList.addView(accountItemView.layoutAccountItem);
-            }
-        });
+        mAccounts = MainService.getInstance().getAllAccounts();
+        if (mAccounts == null || mAccounts.size() <=0) {
+            finish();
+        }
+        if (mAccount == null || mAccount.getAddress().length() == 0) {
+            mAccount = mAccounts.get(0);
+        }
+        tvChangeAccount.setVisibility(View.GONE);
 
         etSendTokenNum.addTextChangedListener(new TextWatcher() {
             @Override
@@ -290,6 +247,7 @@ public class InstantExchangeActivity extends BaseActivity {
         }
 
         initSendToken(ethToken);
+        showAccountInfo(mAccount);
 
         mKyberTokens = MainService.getInstance().getKyberTokenList();
         if (mKyberTokens.size() <= 0) {
@@ -815,8 +773,6 @@ public class InstantExchangeActivity extends BaseActivity {
                                             int resId = R.string.tip_error_transfer;
                                             if (e instanceof CipherException) {
                                                 resId = R.string.tip_error_password;
-                                            } else if (e instanceof TransactionTimeoutException) {
-                                                resId = R.string.tip_error_net;
                                             }
                                             new AlertDialog.Builder(InstantExchangeActivity.this)
                                                     .setMessage(resId)
@@ -999,8 +955,6 @@ public class InstantExchangeActivity extends BaseActivity {
                                             int resId = R.string.tip_error_transfer;
                                             if (e instanceof CipherException) {
                                                 resId = R.string.tip_error_password;
-                                            } else if (e instanceof TransactionTimeoutException) {
-                                                resId = R.string.tip_error_net;
                                             }
                                             new AlertDialog.Builder(InstantExchangeActivity.this)
                                                     .setMessage(resId)

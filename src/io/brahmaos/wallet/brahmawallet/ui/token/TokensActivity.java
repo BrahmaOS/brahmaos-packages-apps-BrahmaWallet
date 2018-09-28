@@ -1,6 +1,5 @@
 package io.brahmaos.wallet.brahmawallet.ui.token;
 
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -18,14 +17,12 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.db.entity.AllTokenEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
+import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import rx.Observer;
@@ -40,10 +37,8 @@ public class TokensActivity extends BaseActivity {
     }
 
     // UI references.
-    @BindView(R.id.tokens_recycler)
-    RecyclerView recyclerViewTokens;
+    private RecyclerView recyclerViewTokens;
 
-    private AccountViewModel mViewModel;
     private List<TokenEntity> chooseTokes = null;
     private List<AllTokenEntity> allTokens = new ArrayList<>();
     // test rinkerby token
@@ -57,51 +52,20 @@ public class TokensActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tokens);
-        ButterKnife.bind(this);
         showNavBackBtn();
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
-
+        recyclerViewTokens = findViewById(R.id.tokens_recycler);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerViewTokens.setLayoutManager(layoutManager);
         recyclerViewTokens.setAdapter(new TokenRecyclerAdapter());
-
-        mViewModel.getShowTokens().observe(this, allTokenEntities -> {
-            if (allTokenEntities != null) {
-                BLog.i(tag(), "the length is:" + allTokenEntities.size());
-                allTokens = allTokenEntities;
-                //allTokens.add(ropstenKyberToken);
-            }
-            refreshTokenList();
-        });
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        mViewModel.getChosenTokens()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<TokenEntity>>() {
-                    @Override
-                    public void onNext(List<TokenEntity> tokenEntities) {
-                        if (tokenEntities == null) {
-                            chooseTokes = new ArrayList<>();
-                        } else {
-                            chooseTokes = tokenEntities;
-                        }
-                        refreshTokenList();
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onCompleted() {
-
-                    }
-                });
+        allTokens = MainService.getInstance().getAllTokenEntityList();
+        //allTokens.add(ropstenKyberToken);
+        chooseTokes = MainService.getInstance().getAllChosenTokens();
+        refreshTokenList();
     }
 
     private void refreshTokenList() {
@@ -195,23 +159,9 @@ public class TokensActivity extends BaseActivity {
                 holder.switchToken.setChecked(checked);
                 holder.switchToken.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     if (isChecked) {
-                        mViewModel.checkToken(currentToken).subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(() -> {
-                                            BLog.e(tag(), "Success to check token:" + token.getName());
-                                        },
-                                        throwable -> {
-                                            BLog.e(tag(), "Unable to check token", throwable);
-                                        });
+                        // TODO check token
                     } else {
-                        mViewModel.uncheckToken(currentToken).subscribeOn(Schedulers.io())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(() -> {
-                                            BLog.e(tag(), "Success to uncheck token" + token.getName());
-                                        },
-                                        throwable -> {
-                                            BLog.e(tag(), "Unable to uncheck token", throwable);
-                                        });;
+                        //TODO uncheck token
                     }
                 });
             }
