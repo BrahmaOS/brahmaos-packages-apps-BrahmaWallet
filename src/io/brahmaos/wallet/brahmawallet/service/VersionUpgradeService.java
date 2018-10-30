@@ -122,6 +122,7 @@ public class VersionUpgradeService {
                                     ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
                                     try {
                                         VersionInfo newVer = objectMapper.readValue(objectMapper.writeValueAsString(apr.getData().get(ApiConst.PARAM_VER_INFO)), new TypeReference<VersionInfo>() {});
+                                        BLog.d(tag(), "version: " + newVer);
                                         if (newVer.getPkgUrl() != null && newVer.getDesc() != null
                                                 && newVer.getCode() > BuildConfig.VERSION_CODE && newVer.getPkgSize() > 0) {
                                             showVersionDlg(activity, newVer, dontAlert, notify);

@@ -354,6 +354,9 @@ public class MainService extends BaseService{
         return null;
     }
 
+    /**
+     * Load all accounts from brahma UserManager
+     */
     public void loadAllAccounts() {
         final UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
         int userId = UserHandle.myUserId();
