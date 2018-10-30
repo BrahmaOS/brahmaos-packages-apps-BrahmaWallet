@@ -13,6 +13,7 @@ import io.brahmaos.wallet.brahmawallet.service.VersionUpgradeService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.util.BLog;
 
+
 public class AboutActivity extends BaseActivity
         implements VersionUpgradeService.INewVerNotify  {
 
