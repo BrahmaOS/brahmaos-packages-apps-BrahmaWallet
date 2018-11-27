@@ -10,7 +10,7 @@ import java.util.ArrayList;
  */
 public class BrahmaConst {
 
-    public static final int APP_ID = 10;
+    public static final int APP_ID = 1;
     public static final int DEFAULT_WALLET_ACCOUNT_ID = 0;
     public static final String IPFS_BASE_URL = "https://ipfs.io/";
     public static final String KYBER_NETWORK_URL = "https://tracker.kyber.network/";
@@ -29,6 +29,7 @@ public class BrahmaConst {
 
     public static final String BRAHMAOS_TOKEN = "brahmaos";
     public static final String ETHEREUM = "ethereum";
+    public static final String BITCOIN = "bitcoin";
     public static final int DEFAULT_GAS_LIMIT = 400000;
     // unit Gwei
     public static final int DEFAULT_GAS_PRICE = 20;
@@ -62,4 +63,8 @@ public class BrahmaConst {
 
     public static final Double MAIN_PAGE_HEADER_RATIO = 0.382;
     public static final String FEEDBACK_URL = "https://github.com/BrahmaOS/wallet/issues";
+
+    // Account type
+    public static final int ETH_ACCOUNT_TYPE = 1;
+    public static final int BTC_ACCOUNT_TYPE = 2;
 }

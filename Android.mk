@@ -1,6 +1,5 @@
 LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
-LOCAL_DEX_PREOPT := false
 LOCAL_PACKAGE_NAME := BrahmaWallet
 LOCAL_CERTIFICATE := platform
 LOCAL_PRIVILEGED_MODULE := true

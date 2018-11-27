@@ -49,8 +49,12 @@ import java.util.Map;
 import android.content.Context;
 import android.os.UserHandle;
 import android.os.UserManager;
-import android.util.DataCryptoUtils;
-import android.util.BrahmaConstants;
+
+import brahmaos.app.WalletManager;
+import brahmaos.content.BrahmaContext;
+import brahmaos.content.WalletData;
+import brahmaos.util.DataCryptoUtils;
+import brahmaos.content.BrahmaConstants;
 import android.util.Log;
 
 import javax.crypto.BadPaddingException;
@@ -354,18 +358,58 @@ public class MainService extends BaseService{
         return null;
     }
 
-    /**
-     * Load all accounts from brahma UserManager
-     */
     public void loadAllAccounts() {
-        final UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
-        int userId = UserHandle.myUserId();
-        String defaultWalletAddr = um.getUserDefaultWalletAddr(userId, BrahmaConstants.ETH_MNEMONIC_PATH);
-        AccountEntity defaultEthAccount = new AccountEntity();
-        defaultEthAccount.setAddress(Numeric.prependHexPrefix(defaultWalletAddr));
-        defaultEthAccount.setId(userId);
-        defaultEthAccount.setName("Default ETH Account");
-        allAccounts.add(defaultEthAccount);
+        WalletManager mWalletManager = (WalletManager) context.getSystemService(BrahmaContext.WALLET_SERVICE);
+        List<WalletData> mWalletDatas = mWalletManager.getAllWallets();
+        for (WalletData walletData : mWalletDatas) {
+            AccountEntity accountEntity = new AccountEntity();
+            accountEntity.setId(mWalletDatas.indexOf(walletData) + 1);
+            accountEntity.setName(walletData.name);
+            accountEntity.setAddress(walletData.address);
+            accountEntity.setDefault(walletData.isDefault);
+            if (walletData.keyPath.equals(BrahmaConstants.BIP_ETH_PATH)) {
+                accountEntity.setType(BrahmaConst.ETH_ACCOUNT_TYPE);
+            } else {
+                accountEntity.setType(BrahmaConst.BTC_ACCOUNT_TYPE);
+            }
+            allAccounts.add(accountEntity);
+        }
+    }
+
+    public List<AccountEntity> getEthereumAccounts() {
+        List<AccountEntity> accountEntities = new ArrayList<>();
+        if (allAccounts != null && allAccounts.size() > 0) {
+            for (AccountEntity accountEntity : allAccounts) {
+                if (accountEntity.getType() == BrahmaConst.ETH_ACCOUNT_TYPE) {
+                    if (accountEntity.isDefault()) {
+                        accountEntities.add(0, accountEntity);
+                    } else {
+                        accountEntities.add(accountEntity);
+                    }
+                }
+            }
+            return accountEntities;
+        } else {
+            return accountEntities;
+        }
+    }
+
+    public List<AccountEntity> getBitcoinAccounts() {
+        List<AccountEntity> accountEntities = new ArrayList<>();
+        if (allAccounts != null && allAccounts.size() > 0) {
+            for (AccountEntity accountEntity : allAccounts) {
+                if (accountEntity.getType() == BrahmaConst.BTC_ACCOUNT_TYPE) {
+                    if (accountEntity.isDefault()) {
+                        accountEntities.add(0, accountEntity);
+                    } else {
+                        accountEntities.add(accountEntity);
+                    }
+                }
+            }
+            return accountEntities;
+        } else {
+            return accountEntities;
+        }
     }
 
     public List<TokenEntity> getAllChosenTokens() {
@@ -612,8 +656,7 @@ public class MainService extends BaseService{
             try {
                 UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
                 String cryptoedMne = um.getUserDefaultMnemonicHex(userId);
-                DataCryptoUtils dc = new DataCryptoUtils();
-                String mnemonics = dc.aes128Decrypt(cryptoedMne, password);
+                String mnemonics = DataCryptoUtils.aes128Decrypt(cryptoedMne, password);
                 long timeSeconds = System.currentTimeMillis() / 1000;
                 DeterministicSeed seed = new DeterministicSeed(mnemonics, null, "", timeSeconds);
                 DeterministicKeyChain chain = DeterministicKeyChain.builder().seed(seed).build();
@@ -639,8 +682,7 @@ public class MainService extends BaseService{
                 UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
                 String cryptoedMne = um.getUserDefaultMnemonicHex(userId);
                 long timeSeconds = System.currentTimeMillis() / 1000;
-                DataCryptoUtils dc = new DataCryptoUtils();
-                String mnemonics = dc.aes128Decrypt(cryptoedMne, password);
+                String mnemonics = DataCryptoUtils.aes128Decrypt(cryptoedMne, password);
                 DeterministicSeed seed = new DeterministicSeed(mnemonics, null, "", timeSeconds);
                 DeterministicKeyChain chain = DeterministicKeyChain.builder().seed(seed).build();
                 List<ChildNumber> keyPath = HDUtils.parsePath("M/44H/60H/0H/0/0");

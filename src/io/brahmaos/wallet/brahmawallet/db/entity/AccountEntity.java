@@ -32,6 +32,9 @@ public class AccountEntity implements Account, Serializable {
     private String name;
     private String address;
     private String filename;
+    private int type;
+    private String cryptoMnemonics;
+    private boolean isDefault;
     @Ignore
     List<String> mnemonics;
 
@@ -82,12 +85,40 @@ public class AccountEntity implements Account, Serializable {
     public AccountEntity() {
     }
 
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public String getCryptoMnemonics() {
+        return cryptoMnemonics;
+    }
+
+    public void setCryptoMnemonics(String cryptoMnemonics) {
+        this.cryptoMnemonics = cryptoMnemonics;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean aDefault) {
+        isDefault = aDefault;
+    }
+
     @Ignore
-    public AccountEntity(int id, String name, String address, String filename) {
+    public AccountEntity(int id, String name, String address, String filename,
+                         int type, String cryptoMnemonics, boolean isDefault) {
         this.id = id;
         this.name = name;
         this.address = address;
         this.filename = filename;
+        this.type = type;
+        this.cryptoMnemonics = cryptoMnemonics;
+        this.isDefault = isDefault;
     }
 
     @Ignore
@@ -96,6 +127,9 @@ public class AccountEntity implements Account, Serializable {
         this.name = account.getName();
         this.address = account.getAddress();
         this.filename = account.getFilename();
+        this.type = account.getType();
+        this.cryptoMnemonics = account.getCryptoMnemonics();
+        this.isDefault = account.isDefault();
     }
 
     @Override
@@ -105,6 +139,7 @@ public class AccountEntity implements Account, Serializable {
                 ", name='" + name + '\'' +
                 ", address='" + address + '\'' +
                 ", filename='" + filename + '\'' +
+                ", type=" + type +
                 ", mnemonics=" + mnemonics +
                 '}';
     }

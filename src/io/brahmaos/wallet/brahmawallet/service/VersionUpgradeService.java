@@ -96,12 +96,12 @@ public class VersionUpgradeService {
         VersionInfo currVer = getCurrVer(activity);
         String lang = "en";
         if (BrahmaConfig.getInstance().getLanguageLocale().equals(BrahmaConst.LANGUAGE_CHINESE)) {
-            lang = "zh_cn";
+            lang = "zh";
         }
 
         if (currVer != null) {
             Networks.getInstance().getWalletApi().getLatestVersion(BrahmaConst.APP_ID,
-                    ApiConst.OSTYPE_BRAHMA, lang)
+                    ApiConst.OSTYPE_ANDROID, lang)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(new Observer<ApiRespResult>() {
@@ -122,7 +122,6 @@ public class VersionUpgradeService {
                                     ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
                                     try {
                                         VersionInfo newVer = objectMapper.readValue(objectMapper.writeValueAsString(apr.getData().get(ApiConst.PARAM_VER_INFO)), new TypeReference<VersionInfo>() {});
-                                        BLog.d(tag(), "version: " + newVer);
                                         if (newVer.getPkgUrl() != null && newVer.getDesc() != null
                                                 && newVer.getCode() > BuildConfig.VERSION_CODE && newVer.getPkgSize() > 0) {
                                             showVersionDlg(activity, newVer, dontAlert, notify);

@@ -53,25 +53,33 @@ public class ImageManager {
     /*
      * Show account info background.
      */
-    public static void showAccountBackground(Context context, ImageView ivLayoutBg, AccountEntity account) {
+    public static int showAccountBackground(Context context, ImageView ivLayoutBg, AccountEntity account) {
         int resId;
+        int colorId;
         int position = account.getId();
         if (position % 6 == 1) {
             resId = R.drawable.account_bg_apple;
+            colorId = 0xD9F75C90;
         } else if (position % 6 == 2) {
             resId = R.drawable.account_bg_baker;
+            colorId = 0xD929BC6A;
         } else if (position % 6 == 3) {
             resId = R.drawable.account_bg_charley;
+            colorId = 0xD92F77D1;
         } else if (position % 6 == 4) {
             resId = R.drawable.account_bg_dog;
+            colorId = 0xD9AA9EFF;
         } else if (position % 6 == 5) {
             resId = R.drawable.account_bg_easy;
+            colorId = 0xD95BD0D7;
         } else {
             resId = R.drawable.account_bg_fox;
+            colorId = 0xD9E59A49;
         }
         Glide.with(context)
                 .load(resId)
                 .into(ivLayoutBg);
+        return colorId;
     }
 
     /*

@@ -22,14 +22,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import android.content.Context;
-import android.os.UserHandle;
-import android.os.UserManager;
 
 import com.bumptech.glide.Glide;
 import com.hwangjr.rxbus.RxBus;
@@ -58,18 +53,14 @@ import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.service.VersionUpgradeService;
 import io.brahmaos.wallet.brahmawallet.ui.account.AccountsActivity;
-import io.brahmaos.wallet.brahmawallet.ui.account.CreateAccountActivity;
-import io.brahmaos.wallet.brahmawallet.ui.account.ImportAccountActivity;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
-import io.brahmaos.wallet.brahmawallet.ui.contact.ContactsActivity;
-import io.brahmaos.wallet.brahmawallet.ui.setting.CelestialBodyIntroActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.AboutActivity;
+import io.brahmaos.wallet.brahmawallet.ui.setting.CelestialBodyIntroActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.HelpActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.SettingsActivity;
 import io.brahmaos.wallet.brahmawallet.ui.token.TokensActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transfer.InstantExchangeActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transfer.TransferActivity;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import io.brahmaos.wallet.util.PermissionUtil;
@@ -159,17 +150,16 @@ public class MainActivity extends BaseActivity
         toggle.syncState();
         navigationView.setNavigationItemSelectedListener(this);
 
-        ImageView ivCelestialBody = navigationView.getHeaderView(0).findViewById(R.id.iv_celestial_body);
-        ivCelestialBody.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, CelestialBodyIntroActivity.class);
-            startActivity(intent);
-        });
-
         swipeRefreshLayout.setOnRefreshListener(() -> {
             // get the latest assets
             getAllAssets();
             // get Currencies
             getCryptoCurrents();
+        });
+        ImageView ivCelestialBody = navigationView.getHeaderView(0).findViewById(R.id.iv_celestial_body);
+        ivCelestialBody.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, CelestialBodyIntroActivity.class);
+            startActivity(intent);
         });
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);

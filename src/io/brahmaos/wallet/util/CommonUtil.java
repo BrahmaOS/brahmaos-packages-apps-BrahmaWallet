@@ -36,6 +36,35 @@ public class CommonUtil {
         return bigDecimal.divide(new BigDecimal(Math.pow(10, 18)), 4, BigDecimal.ROUND_HALF_UP);
     }
 
+    public static BigDecimal convertBTCFromSatoshi(long value) {
+        BigDecimal bigDecimal = new BigDecimal(value);
+        return bigDecimal.divide(new BigDecimal(Math.pow(10, 8)), 8, BigDecimal.ROUND_HALF_UP);
+    }
+
+    public static BigDecimal convertBTCFromSatoshi(BigInteger value) {
+        BigDecimal bigDecimal = new BigDecimal(value);
+        return bigDecimal.divide(new BigDecimal(Math.pow(10, 8)), 8, BigDecimal.ROUND_HALF_UP);
+    }
+
+    public static BigInteger convertSatoshiFromBTC(BigDecimal value) {
+        return value.multiply(new BigDecimal(Math.pow(10, 8))).toBigInteger();
+    }
+
+    public static BigDecimal convertUnit(String tokenName, long value) {
+        return convertUnit(tokenName, new BigInteger(String.valueOf(value)));
+    }
+
+    public static BigDecimal convertUnit(String tokenName, BigInteger value) {
+        if (value.compareTo(BigInteger.ZERO) <= 0) {
+            return new BigDecimal(0.0000);
+        }
+        if (tokenName.toLowerCase().equals(BrahmaConst.BITCOIN)) {
+            return convertBTCFromSatoshi(value);
+        } else {
+            return getAccountFromWei(value);
+        }
+    }
+
     public static String parseAccountContent(String value) {
         return value.replaceAll("\\s*", "");
     }
@@ -94,13 +123,12 @@ public class CommonUtil {
     }
 
     public static boolean cryptoCurrencyCompareToken(CryptoCurrency cryptoCurrency, TokenEntity token) {
-        if (cryptoCurrency.getName().toLowerCase().equals(BrahmaConst.ETHEREUM) &&
-                token.getName().toLowerCase().equals(BrahmaConst.ETHEREUM)) {
-            return true;
-        } else if (cryptoCurrency.getTokenAddress().toLowerCase().equals(token.getAddress().toLowerCase())) {
-            return true;
+        if (cryptoCurrency.getName().toLowerCase().equals(BrahmaConst.ETHEREUM)) {
+            return token.getName().toLowerCase().equals(BrahmaConst.ETHEREUM);
+        } else if (cryptoCurrency.getName().toLowerCase().equals(BrahmaConst.BITCOIN)) {
+            return token.getName().toLowerCase().equals(BrahmaConst.BITCOIN);
         } else {
-            return false;
+            return cryptoCurrency.getTokenAddress().toLowerCase().equals(token.getAddress().toLowerCase());
         }
     }
 
@@ -151,5 +179,10 @@ public class CommonUtil {
         }
         SimpleDateFormat sdf = new SimpleDateFormat(format);
         return sdf.format(new Date(seconds * 1000));
+    }
+
+    public static String datetimeFormat(Date date) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return formatter.format(date);
     }
 }

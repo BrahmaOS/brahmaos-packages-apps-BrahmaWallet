@@ -9,37 +9,21 @@ import java.util.Date;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class VersionInfo implements Serializable {
-
-    @JsonProperty("id")
     private int id;
-
     @JsonProperty("app_id")
     public int appId;
-
-    @JsonProperty("code")
     public int code;
-
-    @JsonProperty("intro")
     private String desc;
-
-    @JsonProperty("name")
     public String name;
-
     @JsonProperty("need_update")
     private int needUpdate;
-
-    @JsonProperty("os")
     public int os;
-
     @JsonProperty("pkg_sha1")
     private String pkgSHA1;
-
     @JsonProperty("pkg_size")
     private int pkgSize;
-
     @JsonProperty("pkg_url")
     private String pkgUrl;
-
     @JsonProperty("release_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date releaseTime;

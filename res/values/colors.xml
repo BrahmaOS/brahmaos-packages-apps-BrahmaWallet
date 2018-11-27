@@ -48,4 +48,13 @@
     <color name="tx_send">#F39900</color>
     <color name="tx_receive">#2B9A35</color>
     <color name="tx_error">#DD0000</color>
+
+    <color name="sync_status_bg">#e6acacac</color>
+
+    <color name="apple_start_color">#D9F75C90</color>
+    <color name="baker_start_color">#D929BC6A</color>
+    <color name="charley_start_color">#D92F77D1</color>
+    <color name="dog_start_color">#D9AA9EFF</color>
+    <color name="easy_start_color">#D95BD0D7</color>
+    <color name="fox_start_color">#D9E59A49</color>
 </resources>

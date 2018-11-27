@@ -21,4 +21,7 @@ public interface Account {
     String getName();
     String getAddress();
     String getFilename();
+    int getType();
+    String getCryptoMnemonics();
+    boolean isDefault();
 }

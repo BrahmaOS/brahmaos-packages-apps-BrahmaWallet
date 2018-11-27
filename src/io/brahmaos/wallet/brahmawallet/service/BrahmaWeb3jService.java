@@ -3,7 +3,7 @@ package io.brahmaos.wallet.brahmawallet.service;
 import android.app.Application;
 import android.content.Context;
 import android.os.UserManager;
-import android.util.DataCryptoUtils;
+import brahmaos.util.DataCryptoUtils;
 import android.util.Log;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -273,8 +273,7 @@ public class BrahmaWeb3jService extends BaseService{
     public Credentials getEthAccountCredetials(AccountEntity account, String password) throws UnreadableWalletException {
         UserManager um = (UserManager) context.getSystemService(Context.USER_SERVICE);
         String cryptoedMne = um.getUserDefaultMnemonicHex(account.getId());
-        DataCryptoUtils dc = new DataCryptoUtils();
-        String mnemonics = dc.aes128Decrypt(cryptoedMne, password);
+        String mnemonics = DataCryptoUtils.aes128Decrypt(cryptoedMne, password);
         if (mnemonics == null) {
             return null;
         }
