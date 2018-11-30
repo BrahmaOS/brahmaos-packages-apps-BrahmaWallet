@@ -147,7 +147,8 @@ public class BtcAccountFragment extends Fragment {
             Intent intent = new Intent(getActivity(), RestoreBtcAccountActivity.class);
             startActivity(intent);
         });
-        accounts = MainService.getInstance().getBitcoinAccounts();
+        //accounts = MainService.getInstance().getBitcoinAccounts();
+        accounts = new ArrayList<>();
         if (accounts == null || accounts.size() == 0) {
             BLog.e(tag(), "the account is null");
             mLayoutCreateAccount.setVisibility(View.VISIBLE);
@@ -182,8 +183,8 @@ public class BtcAccountFragment extends Fragment {
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
             if (holder instanceof AccountRecyclerAdapter.ItemViewHolder) {
                 AccountRecyclerAdapter.ItemViewHolder itemViewHolder = (AccountRecyclerAdapter.ItemViewHolder) holder;
-                AccountEntity accountEntity = accounts.get(position);
-                setData(itemViewHolder, accountEntity);
+                /*AccountEntity accountEntity = accounts.get(position);
+                setData(itemViewHolder, accountEntity);*/
             }
         }
 

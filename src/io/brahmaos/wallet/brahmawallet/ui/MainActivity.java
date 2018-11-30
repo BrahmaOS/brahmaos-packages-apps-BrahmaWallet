@@ -27,10 +27,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.hwangjr.rxbus.RxBus;
-import com.hwangjr.rxbus.annotation.Subscribe;
-import com.hwangjr.rxbus.annotation.Tag;
-import com.hwangjr.rxbus.thread.EventThread;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -64,9 +60,14 @@ import io.brahmaos.wallet.brahmawallet.ui.transfer.TransferActivity;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import io.brahmaos.wallet.util.PermissionUtil;
+import io.brahmaos.wallet.util.RxEventBus;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
+import rx.Completable;
+import rx.CompletableSubscriber;
+import rx.Observable;
+import rx.Subscriber;
 
 public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener, VersionUpgradeService.INewVerNotify {
@@ -95,6 +96,8 @@ public class MainActivity extends BaseActivity
     private List<CryptoCurrency> cacheCryptoCurrencies = new ArrayList<>();
     private VersionInfo newVersionInfo;
 
+    private Observable<Boolean> accountAssetsCallback;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         BLog.i(tag(), "MainActivity onCreate");
@@ -102,7 +105,31 @@ public class MainActivity extends BaseActivity
         setContentView(R.layout.activity_drawer);
         viewBind();
 
-        RxBus.get().register(this);
+        // get all account assets callback
+        accountAssetsCallback = RxEventBus.get().register(EventTypeDef.LOAD_ACCOUNT_ASSETS, Boolean.class);
+        accountAssetsCallback.onBackpressureBuffer()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Boolean>() {
+                    @Override
+                    public void onNext(Boolean flag) {
+                        cacheAssets = MainService.getInstance().getAccountAssetsList();
+                        showAssetsCurrency();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        cacheAssets = MainService.getInstance().getAccountAssetsList();
+                        showAssetsCurrency();
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                        Log.i(tag(), e.toString());
+                        cacheAssets = MainService.getInstance().getAccountAssetsList();
+                        showAssetsCurrency();
+                    }
+                });
 
         VersionUpgradeService.getInstance().checkVersion(this, true, this);
         MainService.getInstance().getTokensLatestVersion();
@@ -213,28 +240,7 @@ public class MainActivity extends BaseActivity
     }
 
     private void getAllAssets() {
-        MainService.getInstance().loadTotalAccountAssets()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<AccountAssets>>() {
-
-                    @Override
-                    public void onCompleted() {
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        throwable.printStackTrace();
-                        cacheAssets = MainService.getInstance().getAccountAssetsList();
-                        showAssetsCurrency();
-                    }
-
-                    @Override
-                    public void onNext(List<AccountAssets> apr) {
-                        cacheAssets = MainService.getInstance().getAccountAssetsList();
-                        showAssetsCurrency();
-                    }
-                });;
+        MainService.getInstance().loadTotalAccountAssets();
     }
 
     @Override
@@ -432,20 +438,7 @@ public class MainActivity extends BaseActivity
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        RxBus.get().unregister(this);
-    }
-
-    @Subscribe(
-            thread = EventThread.MAIN_THREAD,
-            tags = {
-                    @Tag(EventTypeDef.ACCOUNT_ASSETS_CHANGE)
-            }
-    )
-    public void refreshAssets(String status) {
-        BLog.d(tag(), "account assetst change");
-        cacheAssets = MainService.getInstance().getAccountAssetsList();
-        BLog.d(tag(), cacheAssets.toString());
-        showAssetsCurrency();
+        RxEventBus.get().unregister(EventTypeDef.LOAD_ACCOUNT_ASSETS, accountAssetsCallback);
     }
 
     /**

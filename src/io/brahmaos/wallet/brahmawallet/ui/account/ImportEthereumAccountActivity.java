@@ -19,7 +19,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
-import butterknife.BindView;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.ReqCode;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
@@ -32,10 +31,8 @@ public class ImportEthereumAccountActivity extends BaseActivity {
     /**
      * The {@link ViewPager} that will host the section contents.
      */
-    @BindView(R.id.sliding_tabs)
-    TabLayout mTabLayout;
-    @BindView(R.id.viewpager)
-    ViewPager mViewPager;
+    private TabLayout mTabLayout;
+    private ViewPager mViewPager;
 
     @Override
     protected String tag() {
@@ -46,6 +43,8 @@ public class ImportEthereumAccountActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_import_account);
+        mTabLayout = findViewById(R.id.sliding_tabs);
+        mViewPager = findViewById(R.id.viewpager);
         showNavBackBtn();
         initView();
     }

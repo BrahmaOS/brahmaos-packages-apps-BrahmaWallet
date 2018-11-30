@@ -7,6 +7,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,15 +26,24 @@ import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
 import io.brahmaos.wallet.brahmawallet.model.AccountAssets;
 import io.brahmaos.wallet.brahmawallet.model.CryptoCurrency;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.view.CornerFlagView;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
+import io.brahmaos.wallet.util.RxEventBus;
+
+import rx.Completable;
+import rx.CompletableSubscriber;
+import rx.Observable;
+import rx.Observer;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class EthAccountFragment extends Fragment {
     protected String tag() {
@@ -47,10 +57,10 @@ public class EthAccountFragment extends Fragment {
     RecyclerView recyclerViewAccounts;
     private CustomProgressDialog progressDialog;
 
-    private AccountViewModel mViewModel;
     private List<AccountEntity> accounts = new ArrayList<>();
     private List<AccountAssets> accountAssetsList = new ArrayList<>();
     private List<CryptoCurrency> cryptoCurrencies = new ArrayList<>();
+    private Observable<Boolean> newEthAccountCallback;
 
     public static EthAccountFragment newInstance(int page) {
         Bundle args = new Bundle();
@@ -63,6 +73,33 @@ public class EthAccountFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // used to receive btc blocks sync progress
+        newEthAccountCallback = RxEventBus.get().register(EventTypeDef.CHANGE_ETH_ACCOUNT, Boolean.class);
+        newEthAccountCallback.onBackpressureBuffer()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Boolean>() {
+                    @Override
+                    public void onNext(Boolean flag) {
+                        accounts = MainService.getInstance().getEthereumAccounts();
+                        recyclerViewAccounts.getAdapter().notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                        Log.i(tag(), e.toString());
+                    }
+                });
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        RxEventBus.get().unregister(EventTypeDef.CHANGE_ETH_ACCOUNT, newEthAccountCallback);
     }
 
     @Nullable
@@ -105,7 +142,7 @@ public class EthAccountFragment extends Fragment {
                 int position = recyclerViewAccounts.getChildAdapterPosition(v);
                 AccountEntity account = accounts.get(position);
                 Intent intent = new Intent(getActivity(), EthAccountAssetsActivity.class);
-                intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
+                intent.putExtra(IntentParam.PARAM_ACCOUNT_ADDRESS, account.getAddress());
                 startActivity(intent);
             });
             return new AccountRecyclerAdapter.ItemViewHolder(rootView);
@@ -150,6 +187,8 @@ public class EthAccountFragment extends Fragment {
             holder.tvAccountName.setText(account.getName());
             holder.tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
             BigDecimal totalAssets = BigDecimal.ZERO;
+            BLog.d(tag(), accountAssetsList.toString());
+            BLog.d(tag(), account.toString());
             for (AccountAssets assets : accountAssetsList) {
                 if (assets.getAccountEntity().getAddress().equals(account.getAddress()) &&
                         assets.getBalance().compareTo(BigInteger.ZERO) > 0) {

@@ -16,35 +16,24 @@
 
 package io.brahmaos.wallet.brahmawallet.db.entity;
 
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
-import android.arch.persistence.room.Index;
-import android.arch.persistence.room.PrimaryKey;
-
 import java.io.Serializable;
 
-@Entity(tableName = "tokens", indices = {@Index(value = {"address"}, unique = true)})
 public class TokenEntity implements Serializable{
-    @PrimaryKey(autoGenerate = true)
     private int id;
     private String name;
     private String shortName;
 
     private String address;
-    // deprecated, Please use avatar
-    private Integer icon;
     private String avatar;
 
     public TokenEntity() {
     }
 
-    @Ignore
-    public TokenEntity(int id, String name, String shortName, String address, Integer icon, String avatar) {
+    public TokenEntity(int id, String name, String shortName, String address, String avatar) {
         this.id = id;
         this.name = name;
         this.shortName = shortName;
         this.address = address;
-        this.icon = icon;
         this.avatar = avatar;
     }
 
@@ -80,14 +69,6 @@ public class TokenEntity implements Serializable{
         this.address = address;
     }
 
-    public Integer getIcon() {
-        return icon;
-    }
-
-    public void setIcon(Integer icon) {
-        this.icon = icon;
-    }
-
     public String getAvatar() {
         return avatar;
     }
@@ -103,7 +84,6 @@ public class TokenEntity implements Serializable{
                 ", name='" + name + '\'' +
                 ", shortName='" + shortName + '\'' +
                 ", address='" + address + '\'' +
-                ", icon=" + icon +
                 ", avatar='" + avatar + '\'' +
                 '}';
     }

@@ -16,16 +16,9 @@
 
 package io.brahmaos.wallet.brahmawallet.db.entity;
 
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
-import android.arch.persistence.room.Index;
-import android.arch.persistence.room.PrimaryKey;
-
 import java.io.Serializable;
 
-@Entity(tableName = "all_tokens", indices = {@Index(value = {"address"}, unique = true)})
 public class AllTokenEntity implements Serializable{
-    @PrimaryKey(autoGenerate = true)
     private int id;
     private String name;
     private String shortName;
@@ -36,7 +29,6 @@ public class AllTokenEntity implements Serializable{
     public AllTokenEntity() {
     }
 
-    @Ignore
     public AllTokenEntity(int id, String name, String shortName, String address, String avatar, int showFlag) {
         this.id = id;
         this.name = name;

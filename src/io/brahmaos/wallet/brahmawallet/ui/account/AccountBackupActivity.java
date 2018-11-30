@@ -1,20 +1,13 @@
 package io.brahmaos.wallet.brahmawallet.ui.account;
 
-import android.Manifest;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.widget.Button;
 
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
-import io.brahmaos.wallet.brahmawallet.model.Account;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
@@ -52,7 +45,7 @@ public class AccountBackupActivity extends BaseActivity {
                                 startActivity(intent);
                             } else {
                                 Intent intent = new Intent(AccountBackupActivity.this,
-                                        AccountDetailActivity.class);
+                                        EthAccountDetailActivity.class);
                                 intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
                                 startActivity(intent);
                             }

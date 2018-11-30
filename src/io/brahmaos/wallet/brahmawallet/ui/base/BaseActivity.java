@@ -18,7 +18,6 @@ import android.widget.Toast;
 
 import java.util.Locale;
 
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
@@ -57,7 +56,6 @@ public abstract class BaseActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        ButterKnife.bind(this);
     }
 
     @Override

@@ -59,6 +59,7 @@ import android.util.Log;
 
 import javax.crypto.BadPaddingException;
 
+import io.brahmaos.wallet.brahmawallet.BuildConfig;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.WalletApp;
 import io.brahmaos.wallet.brahmawallet.api.ApiConst;
@@ -68,6 +69,7 @@ import io.brahmaos.wallet.brahmawallet.api.Web3jNetworks;
 import io.brahmaos.wallet.brahmawallet.api.Web3jRespResult;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
+import io.brahmaos.wallet.brahmawallet.db.TokenDao;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.AllTokenEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
@@ -77,6 +79,7 @@ import io.brahmaos.wallet.brahmawallet.model.CryptoCurrency;
 import io.brahmaos.wallet.brahmawallet.model.KyberToken;
 import io.brahmaos.wallet.brahmawallet.model.TokensVersionInfo;
 import io.brahmaos.wallet.util.BLog;
+import io.brahmaos.wallet.util.RxEventBus;
 import rx.Completable;
 import rx.CompletableSubscriber;
 import rx.Observable;
@@ -102,6 +105,7 @@ public class MainService extends BaseService{
         super.init(context);
         BrahmaWeb3jService.getInstance().init(context);
         TransactionService.getInstance().init(context);
+        EthAccountManager.getInstance().init(context);
         loadAllAccounts();
         loadChosenTokens();
         return true;
@@ -278,6 +282,8 @@ public class MainService extends BaseService{
                                                                 tokenEntity.setAvatar(avatarObj.get("128x128").toString());
                                                                 if (apiRespResult.indexOf(token) < BrahmaConst.DEFAULT_TOKEN_COUNT) {
                                                                     tokenEntity.setShowFlag(BrahmaConst.DEFAULT_TOKEN_SHOW_FLAG);
+                                                                } else {
+                                                                    tokenEntity.setShowFlag(BrahmaConst.DEFAULT_TOKEN_HIDE_FLAG);
                                                                 }
                                                                 allTokenEntities.add(tokenEntity);
                                                             }
@@ -349,9 +355,10 @@ public class MainService extends BaseService{
         return allAccounts;
     }
 
-    public AccountEntity getAccountByAddress(String address) {
+    public AccountEntity getEthereumAccountByAddress(String address) {
         for (AccountEntity accountEntity : allAccounts) {
-            if (accountEntity.getAddress().toLowerCase().equals(address.toLowerCase())) {
+            if (accountEntity.getType() == BrahmaConst.ETH_ACCOUNT_TYPE &&
+                    accountEntity.getAddress().toLowerCase().equals(address.toLowerCase())) {
                 return accountEntity;
             }
         }
@@ -359,8 +366,10 @@ public class MainService extends BaseService{
     }
 
     public void loadAllAccounts() {
+        allAccounts.clear();
         WalletManager mWalletManager = (WalletManager) context.getSystemService(BrahmaContext.WALLET_SERVICE);
         List<WalletData> mWalletDatas = mWalletManager.getAllWallets();
+        BLog.d(tag(), mWalletDatas.toString());
         for (WalletData walletData : mWalletDatas) {
             AccountEntity accountEntity = new AccountEntity();
             accountEntity.setId(mWalletDatas.indexOf(walletData) + 1);
@@ -431,216 +440,36 @@ public class MainService extends BaseService{
 
         mChosenTokens.add(eth);
         mChosenTokens.add(brm);
+        mChosenTokens.addAll(TokenDao.getInstance().loadChosenTokens());
     }
 
     /*
      * Get all the token's assets for all accounts
      */
-    /*public Observable<List<AccountAssets>> loadTotalAccountAssets() {
-        return Observable.create(e -> {
-            if (allAccounts != null && allAccounts.size() > 0 && mChosenTokens != null && mChosenTokens.size() > 0) {
-                BLog.i("view model", "start get account assets");
-                // init the assets
-                accountAssetsList = new ArrayList<>();
-                for (AccountEntity accountEntity : allAccounts) {
+    public void loadTotalAccountAssets() {
+        if (allAccounts != null && allAccounts.size() > 0 && mChosenTokens != null && mChosenTokens.size() > 0) {
+            BLog.i("view model", "start get account assets");
+            // init the assets
+            accountAssetsList = new ArrayList<>();
+            for (AccountEntity accountEntity : allAccounts) {
+                if (accountEntity.getType() == BrahmaConst.BTC_ACCOUNT_TYPE) {
+                    // TODO fetch btc balance
+                } else {
                     for (TokenEntity tokenEntity : mChosenTokens) {
-                        if (tokenEntity.getShortName().equals("ETH")) {
-                            Map<String, Object> requestParams = new HashMap<>();
-                            requestParams.put(ApiConst.PARAM_JSONRPC, "2.0");
-                            requestParams.put(ApiConst.PARAM_ID, "1");
-                            requestParams.put(ApiConst.PARAM_METHOD, "eth_getBalance");
-                            List<Object> params = new ArrayList<>();
-                            params.add(accountEntity.getAddress());
-                            params.add("latest");
-                            requestParams.put(ApiConst.PARAM_PARAMS, params);
-                            Web3jNetworks.getInstance().getWeb3jApi()
-                                    .callEthRequest(requestParams)
-                                    .subscribeOn(Schedulers.io())
-                                    .observeOn(AndroidSchedulers.mainThread())
-                                    .subscribe(new Observer<Web3jRespResult>() {
-                                        @Override
-                                        public void onCompleted() {
-                                        }
-
-                                        @Override
-                                        public void onError(Throwable throwable) {
-                                            throwable.printStackTrace();
-                                            BLog.e("view model", throwable.getMessage());
-                                            AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
-                                            checkTokenAsset(assets);
-                                            e.onNext(accountAssetsList);
-                                        }
-
-                                        @Override
-                                        public void onNext(Web3jRespResult web3jRespResult) {
-                                            BLog.i(tag(), web3jRespResult.toString());
-                                            if (web3jRespResult != null && web3jRespResult.getResult() != null) {
-                                                BLog.i("view model", "the " + accountEntity.getName() + "'s " +
-                                                        tokenEntity.getName() + " balance is " + web3jRespResult.getResult());
-                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, Numeric.decodeQuantity((String)web3jRespResult.getResult()));
-                                                checkTokenAsset(assets);
-                                            } else {
-                                                BLog.w("view model", "the " + accountEntity.getName() + "'s " +
-                                                        tokenEntity.getName() + " balance is null");
-                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
-                                                checkTokenAsset(assets);
-                                            }
-                                            e.onNext(accountAssetsList);
-                                        }
-                                    });
-                        } else {
-                            Map<String, Object> requestParams = new HashMap<>();
-                            requestParams.put(ApiConst.PARAM_JSONRPC, "2.0");
-                            requestParams.put(ApiConst.PARAM_ID, "1");
-                            requestParams.put(ApiConst.PARAM_METHOD, "eth_call");
-                            List<Object> params = new ArrayList<>();
-                            Map<String, Object> data = new HashMap<>();
-                            data.put("from", accountEntity.getAddress());
-                            data.put("to", tokenEntity.getAddress());
-                            Function function = new Function(
-                                    "balanceOf",
-                                    Arrays.asList(new Address(accountEntity.getAddress())),  // Solidity Types in smart contract functions
-                                    Arrays.asList(new org.web3j.abi.TypeReference<Uint256>(){}));
-
-                            String encodedFunction = FunctionEncoder.encode(function);
-                            data.put("data", encodedFunction);
-                            params.add(data);
-                            params.add("latest");
-                            requestParams.put(ApiConst.PARAM_PARAMS, params);
-
-                            Web3jNetworks.getInstance().getWeb3jApi()
-                                    .callEthRequest(requestParams)
-                                    .subscribeOn(Schedulers.io())
-                                    .observeOn(AndroidSchedulers.mainThread())
-                                    .subscribe(new Observer<Web3jRespResult>() {
-                                        @Override
-                                        public void onCompleted() {
-                                        }
-
-                                        @Override
-                                        public void onError(Throwable throwable) {
-                                            throwable.printStackTrace();
-                                            BLog.e("view model", throwable.getMessage());
-                                            AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
-                                            checkTokenAsset(assets);
-                                            e.onNext(accountAssetsList);
-                                        }
-
-                                        @Override
-                                        public void onNext(Web3jRespResult web3jRespResult) {
-                                            BLog.i(tag(), web3jRespResult.toString());
-                                            if (web3jRespResult != null && web3jRespResult.getResult() != null) {
-                                                BLog.i("view model", "the " + accountEntity.getName() + "'s " +
-                                                        tokenEntity.getName() + " balance is " + web3jRespResult.getResult());
-                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, Numeric.decodeQuantity((String)web3jRespResult.getResult()));
-                                                checkTokenAsset(assets);
-                                            } else {
-                                                BLog.w("view model", "the " + accountEntity.getName() + "'s " +
-                                                        tokenEntity.getName() + " balance is null");
-                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
-                                                checkTokenAsset(assets);
-                                            }
-                                            e.onNext(accountAssetsList);
-                                        }
-                                    });
+                        if (!tokenEntity.getName().toLowerCase().equals(BrahmaConst.BITCOIN)) {
+                            EthAccountManager.getInstance().getEthereumBalanceByAddress(accountEntity, tokenEntity);
                         }
                     }
                 }
             }
-        });
-    }*/
-    public Observable<List<AccountAssets>> loadTotalAccountAssets() {
-        return Observable.create(e -> {
-            if (allAccounts != null && allAccounts.size() > 0 && mChosenTokens != null && mChosenTokens.size() > 0) {
-                BLog.i("view model", "start get account assets");
-                // init the assets
-                accountAssetsList = new ArrayList<>();
-                for (AccountEntity accountEntity : allAccounts) {
-                    for (TokenEntity tokenEntity : mChosenTokens) {
-                        if (tokenEntity.getShortName().equals("ETH")) {
-                            BrahmaWeb3jService.getInstance().getEthBalance(accountEntity)
-                                    .observable()
-                                    .subscribeOn(Schedulers.io())
-                                    .observeOn(AndroidSchedulers.mainThread())
-                                    .subscribe(new Observer<EthGetBalance>() {
-                                        @Override
-                                        public void onCompleted() {
-                                        }
-
-                                        @Override
-                                        public void onError(Throwable throwable) {
-                                            throwable.printStackTrace();
-                                            BLog.e("view model", throwable.getMessage());
-                                            AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
-                                            checkTokenAsset(assets);
-                                            e.onNext(accountAssetsList);
-                                        }
-
-                                        @Override
-                                        public void onNext(EthGetBalance ethGetBalance) {
-                                            BLog.i(tag(), "ethGetBalance" + ethGetBalance.toString());
-                                            if (ethGetBalance != null && ethGetBalance.getBalance() != null) {
-                                                BLog.i("view model", "the " + accountEntity.getName() + "'s " +
-                                                        tokenEntity.getName() + " balance is " + ethGetBalance.getBalance().toString());
-                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, ethGetBalance.getBalance());
-                                                checkTokenAsset(assets);
-                                            } else {
-                                                BLog.w("view model", "the " + accountEntity.getName() + "'s " +
-                                                        tokenEntity.getName() + " balance is null");
-                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
-                                                checkTokenAsset(assets);
-                                            }
-                                            e.onNext(accountAssetsList);
-                                        }
-                                    });
-                        } else {
-                            BrahmaWeb3jService.getInstance().getTokenBalance(accountEntity, tokenEntity)
-                                    .observable()
-                                    .subscribeOn(Schedulers.io())
-                                    .observeOn(AndroidSchedulers.mainThread())
-                                    .subscribe(new Observer<EthCall>() {
-                                        @Override
-                                        public void onCompleted() {
-                                        }
-
-                                        @Override
-                                        public void onError(Throwable throwable) {
-                                            throwable.printStackTrace();
-                                            BLog.e("view model", throwable.getMessage());
-                                            AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
-                                            checkTokenAsset(assets);
-                                            e.onNext(accountAssetsList);
-                                        }
-
-                                        @Override
-                                        public void onNext(EthCall ethCall) {
-                                            BLog.i(tag(), "ethCall----" + ethCall.toString());
-                                            if (ethCall != null && ethCall.getValue() != null) {
-                                                BLog.i("view model", "the " + accountEntity.getName() + "'s " +
-                                                        tokenEntity.getName() + " balance is " + ethCall.getValue());
-                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, Numeric.decodeQuantity(ethCall.getValue()));
-                                                checkTokenAsset(assets);
-                                            } else {
-                                                BLog.w("view model", "the " + accountEntity.getName() + "'s " +
-                                                        tokenEntity.getName() + " balance is null");
-                                                AccountAssets assets = new AccountAssets(accountEntity, tokenEntity, BigInteger.ZERO);
-                                                checkTokenAsset(assets);
-                                            }
-                                            e.onNext(accountAssetsList);
-                                        }
-                                    });
-                        }
-                    }
-                }
-            }
-        });
+        }
     }
 
     /*
      * If the token asset of the account has already exists, then replace it with the new assets.
      * When all assets has exists, post value to main page
      */
-    private void checkTokenAsset(AccountAssets assets) {
+    public synchronized void checkTokenAsset(AccountAssets assets) {
         for (AccountAssets localAssets : accountAssetsList) {
             if (localAssets.getAccountEntity().getAddress().equals(assets.getAccountEntity().getAddress()) &&
                     localAssets.getTokenEntity().getAddress().equals(assets.getTokenEntity().getAddress())) {
@@ -649,6 +478,7 @@ public class MainService extends BaseService{
             }
         }
         accountAssetsList.add(assets);
+        RxEventBus.get().post(EventTypeDef.LOAD_ACCOUNT_ASSETS, true);
     }
 
     public Observable<String> getPrivateKeyByPassword(int userId, String password) {

@@ -23,6 +23,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
+import io.brahmaos.wallet.brahmawallet.db.WalletDBMgr;
 import io.brahmaos.wallet.brahmawallet.repository.DataRepository;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.FingerActivity;
@@ -47,6 +48,8 @@ public class WalletApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        // init sqlite
+        WalletDBMgr.getInstance().init(getApplicationContext());
         MainService.getInstance().init(getApplicationContext());
         // init the config
         BrahmaConfig.getInstance().init(getApplicationContext());

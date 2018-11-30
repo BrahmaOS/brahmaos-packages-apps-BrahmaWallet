@@ -17,6 +17,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.brahmaos.wallet.brahmawallet.BuildConfig;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.db.entity.AllTokenEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
@@ -62,8 +63,11 @@ public class TokensActivity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
+
         allTokens = MainService.getInstance().getAllTokenEntityList();
-        //allTokens.add(ropstenKyberToken);
+        if (BuildConfig.TEST_FLAG) {
+            allTokens.add(2, ropstenKyberToken);
+        }
         chooseTokes = MainService.getInstance().getAllChosenTokens();
         refreshTokenList();
     }

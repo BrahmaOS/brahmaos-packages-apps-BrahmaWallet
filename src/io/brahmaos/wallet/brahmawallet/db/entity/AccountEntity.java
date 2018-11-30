@@ -16,18 +16,12 @@
 
 package io.brahmaos.wallet.brahmawallet.db.entity;
 
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
-import android.arch.persistence.room.PrimaryKey;
-
 import java.io.Serializable;
 import java.util.List;
 
 import io.brahmaos.wallet.brahmawallet.model.Account;
 
-@Entity(tableName = "accounts")
 public class AccountEntity implements Account, Serializable {
-    @PrimaryKey(autoGenerate = true)
     private int id;
     private String name;
     private String address;
@@ -35,7 +29,6 @@ public class AccountEntity implements Account, Serializable {
     private int type;
     private String cryptoMnemonics;
     private boolean isDefault;
-    @Ignore
     List<String> mnemonics;
 
     @Override
@@ -109,7 +102,6 @@ public class AccountEntity implements Account, Serializable {
         isDefault = aDefault;
     }
 
-    @Ignore
     public AccountEntity(int id, String name, String address, String filename,
                          int type, String cryptoMnemonics, boolean isDefault) {
         this.id = id;
@@ -121,7 +113,6 @@ public class AccountEntity implements Account, Serializable {
         this.isDefault = isDefault;
     }
 
-    @Ignore
     public AccountEntity(Account account) {
         this.id = account.getId();
         this.name = account.getName();
@@ -140,6 +131,8 @@ public class AccountEntity implements Account, Serializable {
                 ", address='" + address + '\'' +
                 ", filename='" + filename + '\'' +
                 ", type=" + type +
+                ", cryptoMnemonics='" + cryptoMnemonics + '\'' +
+                ", isDefault=" + isDefault +
                 ", mnemonics=" + mnemonics +
                 '}';
     }

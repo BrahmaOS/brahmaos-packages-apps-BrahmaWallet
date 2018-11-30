@@ -1,8 +1,6 @@
 package io.brahmaos.wallet.brahmawallet.ui.account;
 
 import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -10,22 +8,22 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.EditText;
 
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
+import brahmaos.app.WalletManager;
+import brahmaos.content.BrahmaContext;
 import io.brahmaos.wallet.brahmawallet.R;
+import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
+import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
+import io.brahmaos.wallet.util.RxEventBus;
 
 public class ChangeAccountNameActivity extends BaseActivity {
 
@@ -35,34 +33,30 @@ public class ChangeAccountNameActivity extends BaseActivity {
     }
 
     // UI references.
-    @BindView(R.id.et_account_name)
-    EditText etAccountName;
+    private EditText etAccountName;
 
-    private AccountViewModel mViewModel;
     private List<AccountEntity> accounts;
-    private int accountId;
-    private String accountName;
+    private AccountEntity mAccount;
     private MenuItem menuSave;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_change_account_name);
-        ButterKnife.bind(this);
+        etAccountName = findViewById(R.id.et_account_name);
+
         showNavBackBtn();
-        accountName = getIntent().getStringExtra(IntentParam.PARAM_ACCOUNT_NAME);
-        accountId = getIntent().getIntExtra(IntentParam.PARAM_ACCOUNT_ID, 0);
-        if (accountId <= 0) {
+        mAccount = (AccountEntity) getIntent().getSerializableExtra(IntentParam.PARAM_ACCOUNT_INFO);
+        if (mAccount == null) {
             finish();
         }
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
         initView();
         initData();
     }
 
     private void initView() {
-        etAccountName.setText(accountName);
-        etAccountName.setSelection(accountName.length());
+        etAccountName.setText(mAccount.getName());
+        etAccountName.setSelection(mAccount.getName().length());
         etAccountName.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -72,7 +66,7 @@ public class ChangeAccountNameActivity extends BaseActivity {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 BLog.i(tag(), s.toString());
-                if (s.toString().equals(accountName)) {
+                if (s.toString().equals(mAccount.getName())) {
                     menuSave.setEnabled(false);
                 } else {
                     menuSave.setEnabled(true);
@@ -87,13 +81,7 @@ public class ChangeAccountNameActivity extends BaseActivity {
     }
 
     private void initData() {
-        mViewModel.getAccounts().observe(this, accountEntities -> {
-            if (accountEntities == null) {
-                accounts = null;
-            } else {
-                accounts = accountEntities;
-            }
-        });
+        accounts = MainService.getInstance().getAllAccounts();
     }
 
     @Override
@@ -133,19 +121,24 @@ public class ChangeAccountNameActivity extends BaseActivity {
             progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             progressDialog.show();
 
-            mViewModel.changeAccountName(accountId, name)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(() -> {
-                                progressDialog.cancel();
-                                showLongToast(R.string.success_change_account_name);
-                                finish();
-                            },
-                            throwable -> {
-                                BLog.e(tag(), "Unable to create account", throwable);
-                                progressDialog.cancel();
-                                showLongToast(R.string.error_change_account_name);
-                            });;
+            WalletManager walletManager = (WalletManager) getSystemService(BrahmaContext.WALLET_SERVICE);
+            if (mAccount.getType() == BrahmaConst.ETH_ACCOUNT_TYPE) {
+                int ret = walletManager.updateWalletNameForAddress(name, mAccount.getAddress());
+                progressDialog.cancel();
+                if (ret == WalletManager.CODE_NO_ERROR) {
+                    showLongToast(R.string.success_change_account_name);
+
+                    // Refresh accounts
+                    MainService.getInstance().loadAllAccounts();
+                    RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT, true);
+                    Intent intent = this.getIntent();
+                    intent.putExtra(IntentParam.PARAM_ACCOUNT_NAME, name);
+                    setResult(RESULT_OK, intent);
+                    finish();
+                } else {
+                    showLongToast(R.string.error_change_account_name);
+                }
+            }
         }
         return super.onOptionsItemSelected(item);
     }

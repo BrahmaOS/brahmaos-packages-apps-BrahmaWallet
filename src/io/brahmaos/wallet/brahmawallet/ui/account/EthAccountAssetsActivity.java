@@ -7,6 +7,7 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,6 +31,7 @@ import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
 import io.brahmaos.wallet.brahmawallet.model.AccountAssets;
 import io.brahmaos.wallet.brahmawallet.model.CryptoCurrency;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
@@ -39,6 +41,15 @@ import io.brahmaos.wallet.brahmawallet.ui.transaction.EthTransactionsActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transaction.TransactionsActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
 import io.brahmaos.wallet.util.CommonUtil;
+
+import io.brahmaos.wallet.util.RxEventBus;
+import rx.Completable;
+import rx.CompletableSubscriber;
+import rx.Observable;
+import rx.Observer;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 public class EthAccountAssetsActivity extends BaseActivity {
 
@@ -68,6 +79,8 @@ public class EthAccountAssetsActivity extends BaseActivity {
     private List<CryptoCurrency> cryptoCurrencies = new ArrayList<>();
     private CustomProgressDialog customProgressDialog;
 
+    private Observable<Boolean> mUpdateAccountCallback;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,6 +108,28 @@ public class EthAccountAssetsActivity extends BaseActivity {
         accountAssetsList = MainService.getInstance().getAccountAssetsList();
 
         appBarLayout.setExpanded(true);
+
+        // used to update account info
+        mUpdateAccountCallback = RxEventBus.get().register(EventTypeDef.CHANGE_ETH_ACCOUNT, Boolean.class);
+        mUpdateAccountCallback.onBackpressureBuffer()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Boolean>() {
+                    @Override
+                    public void onNext(Boolean flag) {
+                        account = MainService.getInstance().getEthereumAccountByAddress(accountAddress);
+                        initData();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                        Log.i(tag(), e.toString());
+                    }
+                });
     }
 
     private void initView() {
@@ -113,7 +148,7 @@ public class EthAccountAssetsActivity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        account = MainService.getInstance().getAccountByAddress(accountAddress);
+        account = MainService.getInstance().getEthereumAccountByAddress(accountAddress);
         initData();
         initAssets();
         tokenEntities = MainService.getInstance().getAllChosenTokens();;
@@ -127,7 +162,7 @@ public class EthAccountAssetsActivity extends BaseActivity {
         tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
 
         mLayoutAccountInfo.setOnClickListener(v -> {
-            Intent intent = new Intent(this, AccountDetailActivity.class);
+            Intent intent = new Intent(this, EthAccountDetailActivity.class);
             intent.putExtra(IntentParam.PARAM_ACCOUNT_ADDRESS, account.getAddress());
             startActivity(intent);
         });
@@ -194,6 +229,7 @@ public class EthAccountAssetsActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        RxEventBus.get().unregister(EventTypeDef.CHANGE_ETH_ACCOUNT, mUpdateAccountCallback);
     }
 
     /**

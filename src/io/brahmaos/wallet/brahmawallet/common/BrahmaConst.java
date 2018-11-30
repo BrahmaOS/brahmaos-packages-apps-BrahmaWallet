@@ -9,7 +9,6 @@ import java.util.ArrayList;
  * Definition of commonly used constants
  */
 public class BrahmaConst {
-
     public static final int APP_ID = 1;
     public static final int DEFAULT_WALLET_ACCOUNT_ID = 0;
     public static final String IPFS_BASE_URL = "https://ipfs.io/";

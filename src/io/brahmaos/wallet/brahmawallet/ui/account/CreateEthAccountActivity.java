@@ -1,7 +1,6 @@
 package io.brahmaos.wallet.brahmawallet.ui.account;
 
 import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
@@ -15,14 +14,23 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import brahmaos.content.WalletData;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
+import io.brahmaos.wallet.brahmawallet.service.EthAccountManager;
+import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.PrivacyPolicyActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.ServiceTermsActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
+import io.brahmaos.wallet.util.RxEventBus;
+import rx.Completable;
+import rx.CompletableSubscriber;
+import rx.Observable;
+import rx.Observer;
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -42,7 +50,6 @@ public class CreateEthAccountActivity extends BaseActivity {
     private TextView tvPrivacyPolicy;
 
     private CustomProgressDialog customProgressDialog;
-    private AccountViewModel mViewModel;
     private List<AccountEntity> accounts;
 
     @Override
@@ -64,14 +71,7 @@ public class CreateEthAccountActivity extends BaseActivity {
         tvPrivacyPolicy = findViewById(R.id.privacy_policy_tv);
 
         showNavBackBtn();
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
-        mViewModel.getAccounts().observe(this, accountEntities -> {
-            if (accountEntities == null) {
-                accounts = null;
-            } else {
-                accounts = accountEntities;
-            }
-        });
+        accounts = MainService.getInstance().getEthereumAccounts();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -167,23 +167,42 @@ public class CreateEthAccountActivity extends BaseActivity {
         customProgressDialog.setCancelable(false);
         customProgressDialog.show();
         try {
-            /*mViewModel.createEthAccountWithMnemonic(name, password)
+            EthAccountManager.getInstance().createEthAccount(name, password)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(() -> {
-                                customProgressDialog.cancel();
-                                showLongToast(R.string.success_create_account);
-                                Intent intent = new Intent(CreateEthAccountActivity.this,
-                                        AccountBackupActivity.class);
-                                startActivity(intent);
-                                finish();
-                            },
-                            throwable -> {
-                                BLog.e(tag(), "Unable to create account", throwable);
-                                customProgressDialog.cancel();
-                                btnCreateAccount.setEnabled(true);
+                    .subscribe(new Observer<WalletData>() {
+
+                        @Override
+                        public void onCompleted() {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.dismiss();
+                            }
+                        }
+
+                        @Override
+                        public void onError(Throwable throwable) {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.dismiss();
+                            }
+                            throwable.printStackTrace();
+                            BLog.d(tag(), "create eth account error");
+                        }
+
+                        @Override
+                        public void onNext(WalletData walletData) {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.dismiss();
+                            }
+                            if (walletData == null) {
                                 showLongToast(R.string.error_create_account);
-                            });*/
+                            } else {
+                                RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT, false);
+                                /*Intent intent = new Intent(CreateEthAccountActivity.this, AccountBackupActivity.class);
+                                startActivity(intent);*/
+                                finish();
+                            }
+                        }
+                    });
         } catch (Exception e) {
             e.printStackTrace();
             BLog.e(tag(), e.getMessage());

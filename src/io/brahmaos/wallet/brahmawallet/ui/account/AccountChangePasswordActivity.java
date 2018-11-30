@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.ProgressDialog;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -41,17 +42,21 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
+import brahmaos.app.WalletManager;
+import brahmaos.content.BrahmaContext;
 import io.brahmaos.wallet.brahmawallet.R;
+import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
 import io.brahmaos.wallet.brahmawallet.service.BrahmaWeb3jService;
+import io.brahmaos.wallet.brahmawallet.service.EthAccountManager;
+import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
+import io.brahmaos.wallet.util.RxEventBus;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -64,16 +69,11 @@ import static android.Manifest.permission.READ_CONTACTS;
 public class AccountChangePasswordActivity extends BaseActivity {
 
     // UI references.
-    @BindView(R.id.et_current_password)
-    EditText etCurrentPassword;
-    @BindView(R.id.et_new_password)
-    EditText etNewPassword;
-    @BindView(R.id.et_repeat_new_password)
-    EditText etRepeatPassword;
+    private EditText etCurrentPassword;
+    private EditText etNewPassword;
+    private EditText etRepeatPassword;
 
-    private AccountViewModel mViewModel;
-    private int accountId;
-    private AccountEntity account;
+    private AccountEntity mAccount;
     private CustomProgressDialog progressDialog;
 
     @Override
@@ -86,21 +86,15 @@ public class AccountChangePasswordActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_account_change_password);
         showNavBackBtn();
-        ButterKnife.bind(this);
 
-        accountId = getIntent().getIntExtra(IntentParam.PARAM_ACCOUNT_ID, 0);
-        if (accountId <= 0) {
+        etCurrentPassword = findViewById(R.id.et_current_password);
+        etNewPassword = findViewById(R.id.et_new_password);
+        etRepeatPassword = findViewById(R.id.et_repeat_new_password);
+
+        mAccount = (AccountEntity) getIntent().getSerializableExtra(IntentParam.PARAM_ACCOUNT_INFO);
+        if (mAccount == null) {
             finish();
         }
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mViewModel.getAccountById(accountId).observe(this, accountEntity -> {
-            account = accountEntity;
-        });
     }
 
     @Override
@@ -135,19 +129,24 @@ public class AccountChangePasswordActivity extends BaseActivity {
             progressDialog.setCancelable(false);
             progressDialog.show();
 
-            BrahmaWeb3jService.getInstance()
-                    .getPrivateKeyByPassword(account.getFilename(), currentPassword)
+            EthAccountManager.getInstance()
+                    .updateAccountPassword(mAccount.getAddress(), currentPassword, newPassword)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<String>() {
+                    .subscribe(new Observer<Integer>() {
                         @Override
-                        public void onNext(String privateKey) {
-                            if (privateKey != null && BrahmaWeb3jService.getInstance().isValidPrivateKey(privateKey)) {
-                                changePassword(privateKey, newPassword);
-                            } else {
+                        public void onNext(Integer ret) {
+                            if (progressDialog != null) {
                                 progressDialog.cancel();
+                            }
+                            if (ret == WalletManager.CODE_NO_ERROR) {
+                                showLongToast(R.string.success_change_password);
+                                finish();
+                            } else if (ret == WalletManager.CODE_ERROR_PASSWORD) {
                                 etCurrentPassword.setError(getString(R.string.error_current_password));
                                 etCurrentPassword.requestFocus();
+                            } else {
+                                showLongToast(R.string.error_change_password);
                             }
                         }
 
@@ -155,8 +154,7 @@ public class AccountChangePasswordActivity extends BaseActivity {
                         public void onError(Throwable e) {
                             e.printStackTrace();
                             progressDialog.cancel();
-                            etCurrentPassword.setError(getString(R.string.error_current_password));
-                            etCurrentPassword.requestFocus();
+                            showLongToast(R.string.error_change_password);
                         }
 
                         @Override
@@ -164,43 +162,8 @@ public class AccountChangePasswordActivity extends BaseActivity {
 
                         }
                     });
-
         }
         return super.onOptionsItemSelected(item);
-    }
-
-    private void changePassword(String privateKey, String newPassword) {
-        mViewModel.changeAccountPassword(privateKey, newPassword, accountId)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
-                    @Override
-                    public void onNext(String address) {
-                        if (progressDialog != null) {
-                            progressDialog.cancel();
-                        }
-                        if (address != null && WalletUtils.isValidAddress(address)) {
-                            showLongToast(R.string.success_change_password);
-                            finish();
-                        } else {
-                            showLongToast(R.string.error_change_password);
-                        }
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        if (progressDialog != null) {
-                            progressDialog.cancel();
-                        }
-                        e.printStackTrace();
-                        showLongToast(R.string.error_change_password);
-                    }
-
-                    @Override
-                    public void onCompleted() {
-
-                    }
-                });
     }
 }
 

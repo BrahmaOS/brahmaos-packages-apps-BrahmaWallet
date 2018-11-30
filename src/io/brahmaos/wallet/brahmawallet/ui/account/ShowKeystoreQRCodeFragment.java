@@ -35,7 +35,6 @@ import java.util.List;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
 import io.brahmaos.wallet.brahmawallet.service.BrahmaWeb3jService;
-import io.brahmaos.wallet.brahmawallet.ui.contact.ContactDetailActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.PrivacyPolicyActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.ServiceTermsActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;

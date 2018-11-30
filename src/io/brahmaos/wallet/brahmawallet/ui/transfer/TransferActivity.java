@@ -39,12 +39,12 @@ import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
 import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
 import io.brahmaos.wallet.brahmawallet.model.AccountAssets;
 import io.brahmaos.wallet.brahmawallet.service.BrahmaWeb3jService;
+import io.brahmaos.wallet.brahmawallet.service.EthAccountManager;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.ui.common.barcode.CaptureActivity;
 import io.brahmaos.wallet.brahmawallet.ui.common.barcode.Intents;
-import io.brahmaos.wallet.brahmawallet.ui.contact.ChooseContactActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomStatusView;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
@@ -81,6 +81,7 @@ public class TransferActivity extends BaseActivity {
 
     private AccountEntity mAccount;
     private TokenEntity mToken;
+    private List<AccountEntity> mAccounts = new ArrayList<>();
     private List<AccountAssets> mAccountAssetsList = new ArrayList<>();
 
     @Override
@@ -141,13 +142,64 @@ public class TransferActivity extends BaseActivity {
         }
 
         mAccountAssetsList = MainService.getInstance().getAccountAssetsList();
-        tvChangeAccount.setVisibility(View.GONE);
-        List<AccountEntity> mAccounts = MainService.getInstance().getAllAccounts();
+
+        mAccounts = MainService.getInstance().getEthereumAccounts();
         if (mAccounts == null || mAccounts.size() <= 0) {
             finish();
         }
-        mAccount = mAccounts.get(0);
+
+        if (mAccounts.size() > 1) {
+            tvChangeAccount.setVisibility(View.VISIBLE);
+        } else {
+            tvChangeAccount.setVisibility(View.GONE);
+        }
+
+        if (mAccount == null || mAccount.getAddress().length() <= 0) {
+            for (AccountEntity accountEntity : mAccounts) {
+                if (accountEntity.isDefault()) {
+                    mAccount = accountEntity;
+                    break;
+                }
+            }
+        }
         showAccountInfo(mAccount);
+
+        tvChangeAccount.setOnClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_account_list, null);
+            builder.setView(dialogView);
+            builder.setCancelable(true);
+            final AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+
+            LinearLayout layoutAccountList = dialogView.findViewById(R.id.layout_accounts);
+
+            for (final AccountEntity account : mAccounts) {
+                final AccountItemView accountItemView = new AccountItemView();
+                accountItemView.layoutAccountItem = LayoutInflater.from(this).inflate(R.layout.dialog_list_item_account, null);
+                accountItemView.ivAccountAvatar = accountItemView.layoutAccountItem.findViewById(R.id.iv_account_avatar);
+                accountItemView.tvAccountName = accountItemView.layoutAccountItem.findViewById(R.id.tv_account_name);
+                accountItemView.tvAccountAddress = accountItemView.layoutAccountItem.findViewById(R.id.tv_account_address);
+                accountItemView.layoutDivider = accountItemView.layoutAccountItem.findViewById(R.id.layout_divider);
+
+                accountItemView.tvAccountName.setText(account.getName());
+                ImageManager.showAccountAvatar(this, accountItemView.ivAccountAvatar, account);
+                accountItemView.tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
+
+                accountItemView.layoutAccountItem.setOnClickListener(v1 -> {
+                    alertDialog.cancel();
+                    mAccount = account;
+                    showAccountInfo(account);
+                });
+
+                if (mAccounts.indexOf(account) == mAccounts.size() - 1) {
+                    accountItemView.layoutDivider.setVisibility(View.GONE);
+                }
+
+                layoutAccountList.addView(accountItemView.layoutAccountItem);
+            }
+        });
+
         etGasPrice.setText(String.valueOf(BrahmaConst.DEFAULT_GAS_PRICE));
         etGasLimit.setText(String.valueOf(BrahmaConst.DEFAULT_GAS_LIMIT));
         btnShowTransfer.setOnClickListener(v -> showTransferInfo());
@@ -155,20 +207,19 @@ public class TransferActivity extends BaseActivity {
 
         ivContacts.setVisibility(View.GONE);
         ivContacts.setOnClickListener(v -> {
-            Intent intent = new Intent(TransferActivity.this, ChooseContactActivity.class);
-            startActivityForResult(intent, ReqCode.CHOOSE_TRANSFER_CONTACT);
+
         });
     }
 
     public void getGasPrice() {
-        BrahmaWeb3jService.getInstance()
-                .getGasPrice()
+        EthAccountManager.getInstance()
+                .getEthereumGasPrice()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<BigInteger>() {
+                .subscribe(new Observer<String>() {
                     @Override
-                    public void onNext(BigInteger gasPrice) {
-                        BLog.d(tag(), "the gas price is: " + String.valueOf(gasPrice));
+                    public void onNext(String gasPrice) {
+                        BLog.d(tag(), "the gas price is: " + gasPrice);
                         BigDecimal gasPriceGwei = Convert.fromWei(new BigDecimal(gasPrice), Convert.Unit.GWEI);
                         etGasPrice.setText(String.valueOf(gasPriceGwei));
                     }
@@ -266,6 +317,14 @@ public class TransferActivity extends BaseActivity {
             tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
             showAccountBalance();
         }
+    }
+
+    private class AccountItemView {
+        View layoutAccountItem;
+        ImageView ivAccountAvatar;
+        TextView tvAccountName;
+        TextView tvAccountAddress;
+        LinearLayout layoutDivider;
     }
 
     private void showTransferInfo() {
@@ -399,14 +458,17 @@ public class TransferActivity extends BaseActivity {
                         layoutTransferStatus.setVisibility(View.VISIBLE);
                         customStatusView.loadLoading();
                         String password = ((EditText) dialogView.findViewById(R.id.et_password)).getText().toString();
-                        BrahmaWeb3jService.getInstance().sendTransfer(mAccount, mToken, password, receiverAddress,
+
+                        tvTransferStatus.setText(R.string.progress_send_request);
+                        EthAccountManager.getInstance().sendTransfer(mAccount, mToken, password, receiverAddress,
                                 finalAmount, gasPrice, gasLimit, remark)
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Observer<Integer>() {
+                                .subscribe(new Observer<String>() {
                                     @Override
-                                    public void onNext(Integer flag) {
-                                        if (flag == 10) {
+                                    public void onNext(String txHash) {
+                                        if (txHash != null && txHash.length() > 0) {
+                                            BLog.d(tag(), "the transfer hash is: " + txHash);
                                             tvTransferStatus.setText(R.string.progress_transfer_success);
                                             BLog.i(tag(), "the transfer success");
                                             customStatusView.loadSuccess();
@@ -416,10 +478,19 @@ public class TransferActivity extends BaseActivity {
                                                 // so there is no need to refresh
                                                 finish();
                                             }, 1200);
-                                        } else if (flag == 1) {
-                                            tvTransferStatus.setText(R.string.progress_verify_account);
-                                        } else if (flag == 2) {
-                                            tvTransferStatus.setText(R.string.progress_send_request);
+                                        } else {
+                                            customStatusView.loadFailure();
+                                            tvTransferStatus.setText(R.string.progress_transfer_fail);
+                                            new Handler().postDelayed(() -> {
+                                                layoutTransferStatus.setVisibility(View.GONE);
+                                                int resId = R.string.tip_error_transfer;
+                                                new AlertDialog.Builder(TransferActivity.this)
+                                                        .setMessage(resId)
+                                                        .setNegativeButton(R.string.ok, (dialog1, which1) -> dialog1.cancel())
+                                                        .create().show();
+                                            }, 1500);
+
+                                            BLog.i(tag(), "the transfer failed");
                                         }
                                     }
 

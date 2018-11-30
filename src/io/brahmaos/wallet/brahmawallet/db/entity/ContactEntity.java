@@ -16,17 +16,9 @@
 
 package io.brahmaos.wallet.brahmawallet.db.entity;
 
-import android.arch.persistence.room.Entity;
-import android.arch.persistence.room.Ignore;
-import android.arch.persistence.room.PrimaryKey;
-
 import java.io.Serializable;
 
-import me.yokeyword.indexablerv.IndexableEntity;
-
-@Entity(tableName = "contacts")
-public class ContactEntity implements Serializable, IndexableEntity{
-    @PrimaryKey(autoGenerate = true)
+public class ContactEntity implements Serializable {
     private int id;
     private String familyName;
     private String name;
@@ -37,7 +29,6 @@ public class ContactEntity implements Serializable, IndexableEntity{
     public ContactEntity() {
     }
 
-    @Ignore
     public ContactEntity(int id, String familyName, String name, String address, String avatar, String remark) {
         this.id = id;
         this.familyName = familyName;
@@ -93,21 +84,6 @@ public class ContactEntity implements Serializable, IndexableEntity{
 
     public void setRemark(String remark) {
         this.remark = remark;
-    }
-
-    @Override
-    public String getFieldIndexBy() {
-        return name;
-    }
-
-    @Override
-    public void setFieldIndexBy(String indexField) {
-        this.name = indexField;
-    }
-
-    @Override
-    public void setFieldPinyinIndexBy(String pinyin) {
-
     }
 
     @Override

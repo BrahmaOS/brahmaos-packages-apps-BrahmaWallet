@@ -57,8 +57,6 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         android-support-v4 \
         junit \
         bitcoinj-core \
-        butterknife-annotations \
-        butterknife-compiler \
         glide-compile \
         glide-disklrucache \
         zxing-core \
@@ -96,7 +94,7 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-annotations
 
 #for aars
-LOCAL_STATIC_JAVA_AAR_LIBRARIES := glide-aar butterknife rxbus indexablerecyclerview orhanobut-logger \
+LOCAL_STATIC_JAVA_AAR_LIBRARIES := glide-aar rxbus indexablerecyclerview orhanobut-logger \
                                    glide-gifdecoder reactivex-rxandroid constraint-layout lifecycle-extensions \
                                    lifecycle-livedata lifecycle-viewmodel paging-runtime room-runtime \
                                    lifecycle-runtime lifecycle-livedata-core persistence-db persistence-db-framework
@@ -107,10 +105,7 @@ include $(BUILD_PACKAGE)
 
 include $(CLEAR_VARS)
 
-LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := butterknife:libs/butterknife-8.5.1.aar \
-                                        butterknife-annotations:libs/butterknife-annotations-8.5.1.jar \
-                                        butterknife-compiler:libs/butterknife-compiler-8.5.1.jar \
-                                        glide-aar:libs/glide-4.7.1.aar \
+LOCAL_PREBUILT_STATIC_JAVA_LIBRARIES := glide-aar:libs/glide-4.7.1.aar \
                                         glide-compile:libs/glide-compiler-4.7.1.jar \
                                         glide-gifdecoder:libs/glide-gifdecoder-4.7.1.aar \
                                         glide-disklrucache:libs/glide-disklrucache-4.7.1.jar \

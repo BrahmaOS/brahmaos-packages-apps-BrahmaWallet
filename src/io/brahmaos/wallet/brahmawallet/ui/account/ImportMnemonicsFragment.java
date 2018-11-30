@@ -2,12 +2,10 @@ package io.brahmaos.wallet.brahmawallet.ui.account;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -27,19 +25,25 @@ import org.web3j.crypto.WalletFile;
 import org.web3j.crypto.WalletUtils;
 import org.web3j.protocol.ObjectMapperFactory;
 
-import java.io.IOException;
 import java.util.List;
 
+import brahmaos.content.WalletData;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
-import io.brahmaos.wallet.brahmawallet.service.BrahmaWeb3jService;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
+import io.brahmaos.wallet.brahmawallet.service.EthAccountManager;
+import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.setting.PrivacyPolicyActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.ServiceTermsActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
+import io.brahmaos.wallet.util.RxEventBus;
+import rx.Completable;
+import rx.CompletableSubscriber;
+import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -49,7 +53,6 @@ public class ImportMnemonicsFragment extends Fragment {
     }
 
     public static final String ARG_PAGE = "MNEMONIC_PAGE";
-    private AccountViewModel mViewModel;
     private List<AccountEntity> accounts;
 
     private View parentView;
@@ -96,15 +99,7 @@ public class ImportMnemonicsFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
-        mViewModel.getAccounts().observe(this, accountEntities -> {
-            if (accountEntities == null) {
-                accounts = null;
-            } else {
-                accounts = accountEntities;
-            }
-        });
+        accounts = MainService.getInstance().getEthereumAccounts();
     }
 
     private void initView() {
@@ -202,52 +197,49 @@ public class ImportMnemonicsFragment extends Fragment {
             customProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             customProgressDialog.setCancelable(false);
             customProgressDialog.show();
-            mViewModel.importAccountWithMnemonics(mnemonics, password, name)
+
+            EthAccountManager.getInstance().restoreEthAccountWithMnemonics(name, password, mnemonics)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<String>() {
+                    .subscribe(new Observer<WalletData>() {
+
                         @Override
-                        public void onNext(String address) {
-                            customProgressDialog.cancel();
-                            if (address != null && WalletUtils.isValidAddress(address)) {
-                                Toast.makeText(getContext(), R.string.success_import_account, Toast.LENGTH_SHORT).show();
-                                // hide soft input board
-                                getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-                                Intent intent = new Intent();
-                                getActivity().setResult(Activity.RESULT_OK, intent);
-                                getActivity().finish();
-                            } else if (address != null && address.length() == 0) {
-                                AlertDialog dialogTip = new AlertDialog.Builder(getContext())
-                                        .setMessage(R.string.error_account_exists)
-                                        .setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel())
-                                        .create();
-                                dialogTip.show();
-                                etMnemonic.requestFocus();
-                                btnImportAccount.setEnabled(true);
-                            } else {
-                                Toast.makeText(getContext(), R.string.error_mnemonics, Toast.LENGTH_LONG).show();
-                                etMnemonic.requestFocus();
-                                btnImportAccount.setEnabled(true);
+                        public void onCompleted() {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.cancel();
                             }
                         }
 
                         @Override
-                        public void onError(Throwable e) {
-                            e.printStackTrace();
-                            AlertDialog dialogTip = new AlertDialog.Builder(getContext())
-                                    .setMessage(R.string.error_mnemonics)
-                                    .setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel())
-                                    .create();
-                            dialogTip.show();
-                            //Toast.makeText(getContext(), R.string.error_mnemonics, Toast.LENGTH_LONG).show();
-                            customProgressDialog.cancel();
+                        public void onError(Throwable throwable) {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.cancel();
+                            }
+                            throwable.printStackTrace();
+                            Toast.makeText(getContext(), R.string.error_import_private_key, Toast.LENGTH_LONG).show();
                             etMnemonic.requestFocus();
                             btnImportAccount.setEnabled(true);
                         }
 
                         @Override
-                        public void onCompleted() {
+                        public void onNext(WalletData walletData) {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.cancel();
+                            }
 
+                            if (walletData != null) {
+                                // hide soft input board
+                                RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT, false);
+                                getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+                                Toast.makeText(getContext(), R.string.success_import_account, Toast.LENGTH_LONG).show();
+                                Intent intent = new Intent();
+                                getActivity().setResult(Activity.RESULT_OK, intent);
+                                getActivity().finish();
+                            } else {
+                                Toast.makeText(getContext(), R.string.error_import_private_key, Toast.LENGTH_LONG).show();
+                                etMnemonic.requestFocus();
+                                btnImportAccount.setEnabled(true);
+                            }
                         }
                     });
 

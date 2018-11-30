@@ -19,7 +19,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 
-import butterknife.BindView;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
 import io.brahmaos.wallet.brahmawallet.common.ReqCode;
@@ -33,10 +32,8 @@ public class BackupKeystoreActivity extends BaseActivity {
     /**
      * The {@link ViewPager} that will host the section contents.
      */
-    @BindView(R.id.sliding_tabs)
-    TabLayout mTabLayout;
-    @BindView(R.id.viewpager)
-    ViewPager mViewPager;
+    private TabLayout mTabLayout;
+    private ViewPager mViewPager;
 
     String keystore;
 
@@ -50,6 +47,8 @@ public class BackupKeystoreActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_backup_keystore);
         showNavBackBtn();
+        mTabLayout = findViewById(R.id.sliding_tabs);
+        mViewPager = findViewById(R.id.viewpager);
         initView();
         keystore = getIntent().getStringExtra(IntentParam.PARAM_OFFICIAL_KEYSTORE);
         if (keystore == null || keystore.length() < 1) {

@@ -74,7 +74,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
-        <activity android:name=".ui.account.AccountDetailActivity" />
+        <activity android:name=".ui.account.EthAccountDetailActivity" />
         <activity android:name=".ui.account.ChangeAccountNameActivity" />
         <activity
             android:name=".ui.account.AccountChangePasswordActivity"
@@ -97,14 +97,6 @@
             android:name=".ui.setting.PrivacyPolicyActivity"
             android:label="@string/title_activity_privacy_policy"
             android:theme="@style/AppTheme" />
-        <activity android:name=".ui.contact.ContactsActivity" />
-        <activity
-            android:name=".ui.contact.AddContactActivity"
-            android:label="@string/title_add_contact"
-            android:theme="@style/AppTheme" />
-        <activity android:name=".ui.contact.ChooseContactActivity" />
-        <activity android:name=".ui.contact.ContactDetailActivity" />
-        <activity android:name=".ui.contact.EditContactActivity" />
         <activity android:name=".ui.setting.ServiceTermsActivity" />
         <activity android:name=".ui.account.MnemonicBackupActivity" />
         <activity android:name=".ui.account.ConfirmMnemonicActivity" />
@@ -121,7 +113,9 @@
         <activity android:name=".ui.transaction.TransactionDetailActivity"/>
         <activity android:name=".ui.setting.HelpActivity"/>
         <activity android:name=".ui.setting.CelestialBodyIntroActivity"/>
-
+        <activity android:name=".ui.account.CreateEthAccountActivity"/>
+        <activity android:name=".ui.account.CreateBtcAccountActivity"/>
+        <activity android:name=".ui.account.RestoreBtcAccountActivity"/>
     </application>
 
 </manifest>

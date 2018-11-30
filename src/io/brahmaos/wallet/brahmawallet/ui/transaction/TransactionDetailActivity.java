@@ -34,8 +34,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.IntentParam;
@@ -47,9 +45,7 @@ import io.brahmaos.wallet.brahmawallet.model.TokenTransaction;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.TransactionService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
-import io.brahmaos.wallet.brahmawallet.ui.contact.AddContactActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transfer.TransferActivity;
-import io.brahmaos.wallet.brahmawallet.viewmodel.ContactViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import me.yokeyword.indexablerv.IndexableLayout;
@@ -67,48 +63,30 @@ public class TransactionDetailActivity extends BaseActivity {
     public static final int REQ_CODE_TRANSFER = 10;
 
     // UI references.
-    @BindView(R.id.iv_send_account_avatar)
-    ImageView ivSendAccountAvatar;
-    @BindView(R.id.tv_send_account_name)
-    TextView tvSendAccountName;
-    @BindView(R.id.tv_send_account_address)
-    TextView tvSendAccountAddress;
-    @BindView(R.id.iv_receive_account_avatar)
-    ImageView ivReceiveAccountAvatar;
-    @BindView(R.id.tv_receive_account_name)
-    TextView tvReceiveAccountName;
-    @BindView(R.id.tv_receive_account_address)
-    TextView tvReceiveAccountAddress;
+    private ImageView ivSendAccountAvatar;
+    private TextView tvSendAccountName;
+    private TextView tvSendAccountAddress;
+    private ImageView ivReceiveAccountAvatar;
+    private TextView tvReceiveAccountName;
+    private TextView tvReceiveAccountAddress;
 
-    @BindView(R.id.tv_transaction_tx_hash)
-    TextView tvTxHash;
-    @BindView(R.id.tv_transaction_block_height)
-    TextView tvBlockHeight;
-    @BindView(R.id.tv_transaction_time)
-    TextView tvTxTime;
-    @BindView(R.id.layout_transaction_token_transfered)
-    RelativeLayout layoutTokenTransfered;
-    @BindView(R.id.tv_transaction_token_transfered)
-    TextView tvTokenTransfered;
-    @BindView(R.id.laytou_divider_token_transfered)
-    LinearLayout layoutTokenTransferedDivider;
-    @BindView(R.id.tv_transaction_value)
-    TextView tvTransactionValue;
-    @BindView(R.id.tv_gas_value)
-    TextView tvTxGasValue;
-    @BindView(R.id.tv_gas_used)
-    TextView tvTxGasUsed;
-    @BindView(R.id.tv_gas_price)
-    TextView tvTxGasPrice;
-    @BindView(R.id.layout_copy_etherscan_url)
-    LinearLayout layoutCopyEtherscanUrl;
+    private TextView tvTxHash;
+    private TextView tvBlockHeight;
+    private TextView tvTxTime;
+    private RelativeLayout layoutTokenTransfered;
+    private TextView tvTokenTransfered;
+    private LinearLayout layoutTokenTransferedDivider;
+    private TextView tvTransactionValue;
+    private TextView tvTxGasValue;
+    private TextView tvTxGasUsed;
+    private TextView tvTxGasPrice;
+    private LinearLayout layoutCopyEtherscanUrl;
 
     private EthTransaction mEthTx;
     private TokenTransaction mTokenTx;
     private String fromAddress;
     private String toAddress;
     private String txHash;
-    private ContactViewModel mContactViewModel;
 
     // Determine whether to traverse
     private boolean contactFlag = false;
@@ -121,9 +99,24 @@ public class TransactionDetailActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_transaction_detail);
-        ButterKnife.bind(this);
+        ivSendAccountAvatar = findViewById(R.id.iv_send_account_avatar);
+        tvSendAccountName = findViewById(R.id.tv_send_account_name);
+        tvSendAccountAddress = findViewById(R.id.tv_send_account_address);
+        ivReceiveAccountAvatar = findViewById(R.id.iv_receive_account_avatar);
+        tvReceiveAccountName = findViewById(R.id.tv_receive_account_name);
+        tvReceiveAccountAddress = findViewById(R.id.tv_receive_account_address);
+        tvTxHash = findViewById(R.id.tv_transaction_tx_hash);
+        tvBlockHeight = findViewById(R.id.tv_transaction_block_height);
+        tvTxTime = findViewById(R.id.tv_transaction_time);
+        layoutTokenTransfered = findViewById(R.id.layout_transaction_token_transfered);
+        tvTokenTransfered = findViewById(R.id.tv_transaction_token_transfered);
+        layoutTokenTransferedDivider = findViewById(R.id.laytou_divider_token_transfered);
+        tvTransactionValue = findViewById(R.id.tv_transaction_value);
+        tvTxGasValue = findViewById(R.id.tv_gas_value);
+        tvTxGasUsed = findViewById(R.id.tv_gas_used);
+        tvTxGasPrice = findViewById(R.id.tv_gas_price);
+        layoutCopyEtherscanUrl = findViewById(R.id.layout_copy_etherscan_url);
         showNavBackBtn();
-        mContactViewModel = ViewModelProviders.of(this).get(ContactViewModel.class);
 
         mEthTx = (EthTransaction) getIntent().getSerializableExtra(IntentParam.PARAM_ETH_TX);
         mTokenTx = (TokenTransaction) getIntent().getSerializableExtra(IntentParam.PARAM_TOKEN_TX);
@@ -158,56 +151,6 @@ public class TransactionDetailActivity extends BaseActivity {
     private void initHeader() {
         tvSendAccountAddress.setText(fromAddress);
         tvReceiveAccountAddress.setText(toAddress);
-        mContactViewModel.getContacts().observe(this, contactEntities -> {
-            if (contactEntities != null) {
-                for (ContactEntity contactEntity : contactEntities) {
-                    if (contactEntity.getAddress().toLowerCase().equals(fromAddress.toLowerCase())) {
-                        tvSendAccountName.setVisibility(View.VISIBLE);
-                        tvSendAccountName.setText(new StringBuilder().append(contactEntity.getName()).append(" ").append(contactEntity.getFamilyName()).toString());
-                        ivSendAccountAvatar.setBackgroundResource(R.drawable.icon_contact_circle_bg);
-                        Glide.with(this)
-                                .load(R.drawable.ic_person_account)
-                                .into(ivSendAccountAvatar);
-
-                        fromFlag = true;
-                    }
-                    if (contactEntity.getAddress().toLowerCase().equals(toAddress.toLowerCase())) {
-                        tvReceiveAccountName.setVisibility(View.VISIBLE);
-                        tvReceiveAccountName.setText(new StringBuilder().append(contactEntity.getName()).append(" ").append(contactEntity.getFamilyName()).toString());
-                        ivReceiveAccountAvatar.setBackgroundResource(R.drawable.icon_contact_circle_bg);
-                        Glide.with(this)
-                                .load(R.drawable.ic_person_account)
-                                .into(ivReceiveAccountAvatar);
-
-                        toFlag = true;
-                    }
-                }
-            }
-            contactFlag = true;
-            judgeAddressStatus();
-        });
-        mContactViewModel.getAccounts().observe(this, accountEntities -> {
-            if (accountEntities != null) {
-                for (AccountEntity accountEntity : accountEntities) {
-                    if (accountEntity.getAddress().toLowerCase().equals(fromAddress.toLowerCase())) {
-                        tvSendAccountName.setVisibility(View.VISIBLE);
-                        tvSendAccountName.setText(accountEntity.getName());
-                        ImageManager.showAccountAvatar(this, ivSendAccountAvatar, accountEntity);
-
-                        fromFlag = true;
-                    }
-                    if (accountEntity.getAddress().toLowerCase().equals(toAddress.toLowerCase())) {
-                        tvReceiveAccountName.setVisibility(View.VISIBLE);
-                        tvReceiveAccountName.setText(accountEntity.getName());
-                        ImageManager.showAccountAvatar(this, ivReceiveAccountAvatar, accountEntity);
-
-                        toFlag = true;
-                    }
-                }
-            }
-            accountFlag = true;
-            judgeAddressStatus();
-        });
     }
 
     private void judgeAddressStatus() {
@@ -219,9 +162,7 @@ public class TransactionDetailActivity extends BaseActivity {
                         .load(R.drawable.ic_person_add)
                         .into(ivSendAccountAvatar);
                 ivSendAccountAvatar.setOnClickListener(v -> {
-                    Intent intent = new Intent(TransactionDetailActivity.this, AddContactActivity.class);
-                    intent.putExtra(IntentParam.PARAM_ETH_ADDRESS, fromAddress);
-                    startActivity(intent);
+
                 });
             }
             if (!toFlag) {
@@ -231,9 +172,7 @@ public class TransactionDetailActivity extends BaseActivity {
                         .load(R.drawable.ic_person_add)
                         .into(ivReceiveAccountAvatar);
                 ivReceiveAccountAvatar.setOnClickListener(v -> {
-                    Intent intent = new Intent(TransactionDetailActivity.this, AddContactActivity.class);
-                    intent.putExtra(IntentParam.PARAM_ETH_ADDRESS, toAddress);
-                    startActivity(intent);
+
                 });
             }
         }

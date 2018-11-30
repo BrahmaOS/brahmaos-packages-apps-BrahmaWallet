@@ -2,7 +2,6 @@ package io.brahmaos.wallet.brahmawallet.ui.account;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -28,16 +27,24 @@ import org.web3j.protocol.ObjectMapperFactory;
 import java.io.IOException;
 import java.util.List;
 
+import brahmaos.content.WalletData;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
+import io.brahmaos.wallet.brahmawallet.event.EventTypeDef;
 import io.brahmaos.wallet.brahmawallet.service.BrahmaWeb3jService;
+import io.brahmaos.wallet.brahmawallet.service.EthAccountManager;
+import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.setting.PrivacyPolicyActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.ServiceTermsActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
+import io.brahmaos.wallet.util.RxEventBus;
+import rx.Completable;
+import rx.CompletableSubscriber;
+import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
@@ -47,7 +54,6 @@ public class ImportOfficialFragment extends Fragment {
     }
 
     public static final String ARG_PAGE = "OFFICIAL_KEYSTORE_PAGE";
-    private AccountViewModel mViewModel;
     private List<AccountEntity> accounts;
 
     private View parentView;
@@ -92,15 +98,7 @@ public class ImportOfficialFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
-        mViewModel.getAccounts().observe(this, accountEntities -> {
-            if (accountEntities == null) {
-                accounts = null;
-            } else {
-                accounts = accountEntities;
-            }
-        });
+        accounts = MainService.getInstance().getEthereumAccounts();
     }
 
     private void initView() {
@@ -209,15 +207,38 @@ public class ImportOfficialFragment extends Fragment {
             customProgressDialog.setCancelable(false);
             customProgressDialog.show();
             if (WalletUtils.isValidAddress(address)) {
-                mViewModel.importAccount(walletFile, password, name)
+                EthAccountManager.getInstance().restoreEthAccountWithKeystore(name, password, officialKeystore)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Observer<Boolean>() {
+                        .subscribe(new Observer<WalletData>() {
+
                             @Override
-                            public void onNext(Boolean flag) {
-                                customProgressDialog.cancel();
-                                if (flag) {
+                            public void onCompleted() {
+                                if (customProgressDialog != null) {
+                                    customProgressDialog.cancel();
+                                }
+                            }
+
+                            @Override
+                            public void onError(Throwable throwable) {
+                                if (customProgressDialog != null) {
+                                    customProgressDialog.cancel();
+                                }
+                                throwable.printStackTrace();
+                                Toast.makeText(getContext(), R.string.error_import_keystore, Toast.LENGTH_LONG).show();
+                                etKeystore.requestFocus();
+                                btnImportAccount.setEnabled(true);
+                            }
+
+                            @Override
+                            public void onNext(WalletData walletData) {
+                                if (customProgressDialog != null) {
+                                    customProgressDialog.cancel();
+                                }
+
+                                if (walletData != null) {
                                     // hide soft input board
+                                    RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT, false);
                                     getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
                                     Toast.makeText(getContext(), R.string.success_import_account, Toast.LENGTH_LONG).show();
                                     Intent intent = new Intent();
@@ -228,20 +249,6 @@ public class ImportOfficialFragment extends Fragment {
                                     etKeystore.requestFocus();
                                     btnImportAccount.setEnabled(true);
                                 }
-                            }
-
-                            @Override
-                            public void onError(Throwable e) {
-                                e.printStackTrace();
-                                Toast.makeText(getContext(), R.string.error_import_keystore, Toast.LENGTH_LONG).show();
-                                customProgressDialog.cancel();
-                                etKeystore.requestFocus();
-                                btnImportAccount.setEnabled(true);
-                            }
-
-                            @Override
-                            public void onCompleted() {
-
                             }
                         });
             } else {
