@@ -10,6 +10,7 @@ public class BitcoinDownloadProgress implements Serializable {
     private int blocksLeft;
     private double progressPercentage;
     private Date currentBlockDate;
+    private String currentBlockDateString;
     private boolean downloaded;
 
     public Peer getPeer() {
@@ -52,6 +53,14 @@ public class BitcoinDownloadProgress implements Serializable {
         this.downloaded = downloaded;
     }
 
+    public String getCurrentBlockDateString() {
+        return currentBlockDateString;
+    }
+
+    public void setCurrentBlockDateString(String currentBlockDateString) {
+        this.currentBlockDateString = currentBlockDateString;
+    }
+
     @Override
     public String toString() {
         return "BitcoinDownloadProgress{" +
@@ -59,6 +68,7 @@ public class BitcoinDownloadProgress implements Serializable {
                 ", blocksLeft=" + blocksLeft +
                 ", progressPercentage=" + progressPercentage +
                 ", currentBlockDate=" + currentBlockDate +
+                ", currentBlockDateString='" + currentBlockDateString + '\'' +
                 ", downloaded=" + downloaded +
                 '}';
     }

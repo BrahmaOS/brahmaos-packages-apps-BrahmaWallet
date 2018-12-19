@@ -23,6 +23,7 @@ import io.brahmaos.wallet.brahmawallet.db.entity.AllTokenEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
+import io.brahmaos.wallet.brahmawallet.service.TokenService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
@@ -42,9 +43,6 @@ public class TokensActivity extends BaseActivity {
 
     private List<TokenEntity> chooseTokes = null;
     private List<AllTokenEntity> allTokens = new ArrayList<>();
-    // test rinkerby token
-    private AllTokenEntity testToken = new AllTokenEntity(0, "BrahmaOS", "BRM(TEST)",
-                                          "0xb958c57d1896823b8f4178a21e1bf6796371eac4", "", 1);
     // test ropsten
     private AllTokenEntity ropstenKyberToken = new AllTokenEntity(0, "Kyber Network Test", "KNC(TEST)",
             "0x4E470dc7321E84CA96FcAEDD0C8aBCebbAEB68C6", "", 1);
@@ -64,9 +62,9 @@ public class TokensActivity extends BaseActivity {
     protected void onStart() {
         super.onStart();
 
-        allTokens = MainService.getInstance().getAllTokenEntityList();
+        allTokens = TokenService.getInstance().getAllShowTokensFromDB();
         if (BuildConfig.TEST_FLAG) {
-            allTokens.add(2, ropstenKyberToken);
+            allTokens.add(0, ropstenKyberToken);
         }
         chooseTokes = MainService.getInstance().getAllChosenTokens();
         refreshTokenList();
@@ -163,9 +161,10 @@ public class TokensActivity extends BaseActivity {
                 holder.switchToken.setChecked(checked);
                 holder.switchToken.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     if (isChecked) {
-                        // TODO check token
+                        TokenService.getInstance().checkTokenEntity(currentToken);
                     } else {
                         //TODO uncheck token
+                        TokenService.getInstance().unCheckTokenEntity(currentToken);
                     }
                 });
             }

@@ -1,14 +1,18 @@
 package io.brahmaos.wallet.brahmawallet.ui.token;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.SearchView;
+import android.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -24,6 +28,7 @@ import io.brahmaos.wallet.brahmawallet.db.entity.AllTokenEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
+import io.brahmaos.wallet.brahmawallet.service.TokenService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
@@ -47,8 +52,6 @@ public class TokenSearchActivity extends BaseActivity {
     private List<AllTokenEntity> allTokens = new ArrayList<>();
     private String currentData = "";
 
-    private SearchView.SearchAutoComplete searchAutoComplete;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,11 +73,28 @@ public class TokenSearchActivity extends BaseActivity {
         chooseTokes = MainService.getInstance().getAllChosenTokens();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.HONEYCOMB)
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_search_token, menu);
-        SearchView searchView = (SearchView) menu.findItem(R.id.action_search).getActionView();
-        searchAutoComplete = searchView.findViewById(R.id.search_src_text);
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+
+        int magId = getResources().getIdentifier("android:id/search_mag_icon",null, null);
+        ImageView magImage = (ImageView) searchView.findViewById(magId);
+        magImage.setLayoutParams(new LinearLayout.LayoutParams(0, 0));
+
+        int searchPlateId = getResources().getIdentifier("android:id/search_plate",null, null);
+        View searchPlateView = searchView.findViewById(searchPlateId);
+        searchPlateView.setBackground(null);
+
+        int submitViewId = getResources().getIdentifier("android:id/submit_area",null, null);
+        View submitVie = searchView.findViewById(submitViewId);
+        submitVie.setBackground(null);
+
+        magImage.setLayoutParams(new LinearLayout.LayoutParams(0, 0));
+
+        searchView.setIconifiedByDefault(false);
         searchView.onActionViewExpanded();
         searchView.setMaxWidth(30000);
         searchView.setQueryHint(getString(R.string.prompt_search_token));
@@ -97,12 +117,6 @@ public class TokenSearchActivity extends BaseActivity {
 
             @Override
             public boolean onQueryTextChange(String s) {
-                /*currentData = s;
-                if (delayRun != null) {
-                    handler.removeCallbacks(delayRun);
-                }
-                handler.postDelayed(delayRun, 1000);*/
-
                 return false;
             }
 
@@ -111,49 +125,20 @@ public class TokenSearchActivity extends BaseActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    private Handler handler = new Handler();
-
-    private Runnable delayRun = new Runnable() {
-        @Override
-        public void run() {
-            String inputStr = searchAutoComplete.getText().toString();
-            if (inputStr.equals(currentData) && inputStr.length() > 0) {
-                queryTokens(inputStr);
-            }
-        }
-    };
-
     private void queryTokens(String param) {
-        /*mViewModel.queryAllTokensSync("%" + param + "%")
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<AllTokenEntity>>() {
-                    @Override
-                    public void onNext(List<AllTokenEntity> allTokenEntities) {
-                        if (allTokenEntities == null || allTokenEntities.size() <= 0) {
-                            recyclerViewTokens.setVisibility(View.GONE);
-                            layoutNoResult.setVisibility(View.VISIBLE);
-                            layoutDefault.setVisibility(View.GONE);
-                        } else {
-                            recyclerViewTokens.setVisibility(View.VISIBLE);
-                            layoutNoResult.setVisibility(View.GONE);
-                            layoutDefault.setVisibility(View.GONE);
-                            allTokens = allTokenEntities;
-                            // When change database, don't need refresh page
-                            recyclerViewTokens.getAdapter().notifyDataSetChanged();
-                        }
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onCompleted() {
-                        BLog.i(tag(), "the param is: " + param);
-                    }
-                });*/
+        List<AllTokenEntity> allTokenEntities = TokenService.getInstance().queryToken(param);
+        if (allTokenEntities.size() <= 0) {
+            recyclerViewTokens.setVisibility(View.GONE);
+            layoutNoResult.setVisibility(View.VISIBLE);
+            layoutDefault.setVisibility(View.GONE);
+        } else {
+            recyclerViewTokens.setVisibility(View.VISIBLE);
+            layoutNoResult.setVisibility(View.GONE);
+            layoutDefault.setVisibility(View.GONE);
+            allTokens = allTokenEntities;
+            // When change database, don't need refresh page
+            recyclerViewTokens.getAdapter().notifyDataSetChanged();
+        }
 
     }
 
@@ -226,9 +211,9 @@ public class TokenSearchActivity extends BaseActivity {
                 holder.switchToken.setChecked(checked);
                 holder.switchToken.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     if (isChecked) {
-                        // TODO check token
+                        TokenService.getInstance().checkTokenEntity(currentToken);
                     } else {
-                        //TODO uncheck token
+                        TokenService.getInstance().unCheckTokenEntity(currentToken);
                     }
                 });
             }

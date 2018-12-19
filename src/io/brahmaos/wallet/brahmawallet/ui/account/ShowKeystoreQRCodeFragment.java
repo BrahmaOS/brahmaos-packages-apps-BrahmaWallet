@@ -1,50 +1,22 @@
 package io.brahmaos.wallet.brahmawallet.ui.account;
 
-import android.app.Activity;
-import android.app.ProgressDialog;
-import android.arch.lifecycle.ViewModelProviders;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.AlertDialog;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.web3j.crypto.WalletFile;
-import org.web3j.crypto.WalletUtils;
-import org.web3j.protocol.ObjectMapperFactory;
-
-import java.io.IOException;
-import java.util.List;
 
 import io.brahmaos.wallet.brahmawallet.R;
-import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
-import io.brahmaos.wallet.brahmawallet.service.BrahmaWeb3jService;
-import io.brahmaos.wallet.brahmawallet.ui.setting.PrivacyPolicyActivity;
-import io.brahmaos.wallet.brahmawallet.ui.setting.ServiceTermsActivity;
-import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import io.brahmaos.wallet.util.QRCodeUtil;
-import rx.Observer;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
 
 public class ShowKeystoreQRCodeFragment extends Fragment {
     protected String tag() {

@@ -122,22 +122,25 @@ public class ChangeAccountNameActivity extends BaseActivity {
             progressDialog.show();
 
             WalletManager walletManager = (WalletManager) getSystemService(BrahmaContext.WALLET_SERVICE);
-            if (mAccount.getType() == BrahmaConst.ETH_ACCOUNT_TYPE) {
-                int ret = walletManager.updateWalletNameForAddress(name, mAccount.getAddress());
-                progressDialog.cancel();
-                if (ret == WalletManager.CODE_NO_ERROR) {
-                    showLongToast(R.string.success_change_account_name);
 
-                    // Refresh accounts
-                    MainService.getInstance().loadAllAccounts();
+            int ret = walletManager.updateWalletNameForAddress(name, mAccount.getAddress());
+            progressDialog.cancel();
+            if (ret == WalletManager.CODE_NO_ERROR) {
+                showLongToast(R.string.success_change_account_name);
+
+                // Refresh accounts
+                MainService.getInstance().loadAllAccounts();
+                if (mAccount.getType() == BrahmaConst.ETH_ACCOUNT_TYPE) {
                     RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT, true);
-                    Intent intent = this.getIntent();
-                    intent.putExtra(IntentParam.PARAM_ACCOUNT_NAME, name);
-                    setResult(RESULT_OK, intent);
-                    finish();
-                } else {
-                    showLongToast(R.string.error_change_account_name);
+                } else if (mAccount.getType() == BrahmaConst.BTC_ACCOUNT_TYPE) {
+                    RxEventBus.get().post(EventTypeDef.CHANGE_BTC_ACCOUNT, true);
                 }
+                Intent intent = this.getIntent();
+                intent.putExtra(IntentParam.PARAM_ACCOUNT_NAME, name);
+                setResult(RESULT_OK, intent);
+                finish();
+            } else {
+                showLongToast(R.string.error_change_account_name);
             }
         }
         return super.onOptionsItemSelected(item);

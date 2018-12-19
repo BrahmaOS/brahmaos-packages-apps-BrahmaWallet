@@ -1,14 +1,11 @@
 package io.brahmaos.wallet.brahmawallet.ui.account;
 
 import android.animation.ObjectAnimator;
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -19,15 +16,9 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.wallet.Wallet;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 
@@ -43,7 +34,8 @@ import io.brahmaos.wallet.brahmawallet.service.BtcAccountManager;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
+import io.brahmaos.wallet.brahmawallet.ui.transfer.BtcTransferActivity;
+import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import io.brahmaos.wallet.util.RxEventBus;
 import rx.Observable;
@@ -84,15 +76,13 @@ public class BtcAccountAssetsActivity extends BaseActivity {
     private RelativeLayout mLayoutPendingTransaction;
     private TextView mTvPendingTransaction;
 
-    private int accountId;
+    private String accountAddress;
     private AccountEntity account;
-    private AccountViewModel mViewModel;
-    private WalletAppKit kit;
     private List<CryptoCurrency> cryptoCurrencies = new ArrayList<>();
     private BitcoinDownloadProgress bitcoinDownloadProgress;
     private Observable<BitcoinDownloadProgress> btcSyncStatus;
-    private Observable<Boolean> btcAppkitSetup;
-    private Observable<Transaction> btcTransactionStatus;
+    private Observable<Boolean> btcTransactionStatus;
+    private Observable<Boolean> btcAccountChangeCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,8 +114,8 @@ public class BtcAccountAssetsActivity extends BaseActivity {
         mLayoutPendingTransaction = findViewById(R.id.layout_pending_transaction_content);
         mTvPendingTransaction = findViewById(R.id.tv_pending_transaction_content);
         showNavBackBtn();
-        accountId = getIntent().getIntExtra(IntentParam.PARAM_ACCOUNT_ID, 0);
-        if (accountId <= 0) {
+        accountAddress = getIntent().getStringExtra(IntentParam.PARAM_ACCOUNT_ADDRESS);
+        if (accountAddress == null) {
             finish();
         }
         if (BrahmaConfig.getInstance().getCurrencyUnit().equals(BrahmaConst.UNIT_PRICE_CNY)) {
@@ -139,7 +129,6 @@ public class BtcAccountAssetsActivity extends BaseActivity {
                     .into(ivCurrencyUnit);
             tvBtcPriceUnit.setText(BrahmaConst.UNIT_PRICE_USD);
         }
-        mViewModel = ViewModelProviders.of(this).get(AccountViewModel.class);
         cryptoCurrencies = MainService.getInstance().getCryptoCurrencies();
         appBarLayout.setExpanded(true);
 
@@ -157,11 +146,11 @@ public class BtcAccountAssetsActivity extends BaseActivity {
                         if (bitcoinDownloadProgress.isDownloaded()) {
                             ObjectAnimator.ofFloat(mLayoutSyncStatus, "translationY", -mLayoutSyncStatus.getHeight()).start();
                             // show btc account info
-                            setBtcTransactionInfo();
+                            setBtcAccountInfo();
                         } else {
                             mLayoutSyncStatus.setVisibility(View.VISIBLE);
                             String syncTime = String.format("%s %s %s", getResources().getString(R.string.from),
-                                    CommonUtil.datetimeFormat(progress.getCurrentBlockDate()),
+                                    progress.getCurrentBlockDateString(),
                                     getResources().getString(R.string.start_sync));
                             mTvSyncTime.setText(syncTime);
 
@@ -177,12 +166,10 @@ public class BtcAccountAssetsActivity extends BaseActivity {
                             }
                             ObjectAnimator.ofFloat(mLayoutSyncStatus, "translationY", mLayoutSyncStatus.getHeight()).start();
 
-                            if (kit != null && kit.wallet() != null) {
-                                Wallet wallet = kit.wallet();
-                                mTvSyncBlockHeight.setText(String.valueOf(wallet.getLastBlockSeenHeight()));
-                                if (wallet.getLastBlockSeenTime() != null) {
-                                    mTvSyncBlockDatetime.setText(Utils.dateTimeFormat(wallet.getLastBlockSeenTime()));
-                                }
+                            mTvSyncBlockHeight.setText(String.valueOf(BtcAccountManager.getInstance().getBtcLastBlockSeenHeight(accountAddress)));
+                            String blockDate = BtcAccountManager.getInstance().getBtcLastBlockSeenTime(accountAddress);
+                            if (blockDate != null) {
+                                mTvSyncBlockDatetime.setText(blockDate);
                             }
                         }
                     }
@@ -198,15 +185,12 @@ public class BtcAccountAssetsActivity extends BaseActivity {
                     }
                 });
 
-        btcAppkitSetup = RxEventBus.get().register(EventTypeDef.BTC_APP_KIT_INIT_SET_UP, Boolean.class);
-        btcAppkitSetup.observeOn(AndroidSchedulers.mainThread())
+        btcTransactionStatus = RxEventBus.get().register(EventTypeDef.BTC_TRANSACTION_CHANGE, Boolean.class);
+        btcTransactionStatus.observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<Boolean>() {
                     @Override
                     public void onNext(Boolean flag) {
-                        if (flag) {
-                            initView();
-                            initAssets();
-                        }
+                        setBtcAccountInfo();
                     }
 
                     @Override
@@ -220,13 +204,16 @@ public class BtcAccountAssetsActivity extends BaseActivity {
                     }
                 });
 
-        btcTransactionStatus = RxEventBus.get().register(EventTypeDef.BTC_TRANSACTION_CHANGE, Transaction.class);
-        btcTransactionStatus.onBackpressureBuffer()
+        // used to receive btc blocks sync progress
+        btcAccountChangeCallback = RxEventBus.get().register(EventTypeDef.CHANGE_BTC_ACCOUNT, Boolean.class);
+        btcAccountChangeCallback.onBackpressureBuffer()
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Transaction>() {
+                .subscribe(new Observer<Boolean>() {
                     @Override
-                    public void onNext(Transaction transaction) {
-                        setBtcTransactionInfo();
+                    public void onNext(Boolean flag) {
+                        account = MainService.getInstance().getBitcoinAccountByAddress(accountAddress);
+                        initView();
+                        initAssets();
                     }
 
                     @Override
@@ -244,17 +231,13 @@ public class BtcAccountAssetsActivity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        mViewModel.getAccountById(accountId)
-                .observe(this, (AccountEntity accountEntity) -> {
-                    if (accountEntity != null) {
-                        account = accountEntity;
-                        kit = BtcAccountManager.getInstance().getBtcWalletAppKit(account.getFilename());
-                        initView();
-                        initAssets();
-                    } else {
-                        finish();
-                    }
-                });
+        account = MainService.getInstance().getBitcoinAccountByAddress(accountAddress);
+        if (account == null) {
+            finish();
+            return;
+        }
+        initView();
+        initAssets();
     }
 
     private void initView() {
@@ -262,23 +245,17 @@ public class BtcAccountAssetsActivity extends BaseActivity {
         ImageManager.showAccountBackground(BtcAccountAssetsActivity.this, ivAccountBg, account);
         tvAccountName.setText(account.getName());
 
-        /*mLayoutAccountInfo.setOnClickListener(v -> {
+        mLayoutAccountInfo.setOnClickListener(v -> {
+            BLog.d(tag(), "click acount info: " + account.getAddress());
             Intent intent = new Intent(this, BtcAccountDetailActivity.class);
-            intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
+            intent.putExtra(IntentParam.PARAM_ACCOUNT_ADDRESS, account.getAddress());
             startActivity(intent);
-        });*/
-
-        appBarLayout.addOnOffsetChangedListener((appBarLayout, verticalOffset) -> {
-            if (Math.abs(verticalOffset) >= appBarLayout.getTotalScrollRange() / 2) {
-                collapsingToolbarLayout.setTitle(account.getName());
-            } else {
-                collapsingToolbarLayout.setTitle("");
-            }
         });
+        collapsingToolbarLayout.setTitle(" ");
 
-        /* mLayoutReceiveBtc.setOnClickListener(v -> {
+        mLayoutReceiveBtc.setOnClickListener(v -> {
             Intent intent = new Intent(BtcAccountAssetsActivity.this, BtcAddressQrcodeActivity.class);
-            intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
+            intent.putExtra(IntentParam.PARAM_ACCOUNT_ADDRESS, account.getAddress());
             startActivity(intent);
         });
 
@@ -289,10 +266,10 @@ public class BtcAccountAssetsActivity extends BaseActivity {
         });
 
         mLayoutTransaction.setOnClickListener(v -> {
-            Intent intent = new Intent(BtcAccountAssetsActivity.this, BtcTransactionsActivity.class);
+            /*Intent intent = new Intent(BtcAccountAssetsActivity.this, BtcTransactionsActivity.class);
             intent.putExtra(IntentParam.PARAM_ACCOUNT_INFO, account);
-            startActivity(intent);
-        });*/
+            startActivity(intent);*/
+        });
     }
 
     private void initAssets() {
@@ -306,23 +283,15 @@ public class BtcAccountAssetsActivity extends BaseActivity {
                 break;
             }
         }
-        BigDecimal totalAssets = BigDecimal.ZERO;
-        long balance = 0;
-        if ( kit != null && kit.wallet() != null) {
-            setBtcTransactionInfo();
-        } else {
-            BtcAccountManager.getInstance().initExistsWalletAppKit(account);
-            tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
-            tvAccountBalance.setText(String.valueOf(CommonUtil.convertUnit(BrahmaConst.BITCOIN, new BigInteger(String.valueOf(balance)))));
-            tvTotalAssets.setText(String.valueOf(totalAssets.setScale(2, BigDecimal.ROUND_HALF_UP)));
-        }
+        setBtcAccountInfo();
     }
 
-    private void setBtcTransactionInfo() {
-        if (kit != null && kit.wallet() != null) {
+    private void setBtcAccountInfo() {
+        if (account != null) {
+
             BigDecimal totalAssets = BigDecimal.ZERO;
-            long balance = kit.wallet().getBalance().value;
-            tvAccountAddress.setText(CommonUtil.generateSimpleAddress(kit.wallet().currentReceiveAddress().toBase58()));
+            long balance = BtcAccountManager.getInstance().getBtcAccountBalance(accountAddress);
+            tvAccountAddress.setText(CommonUtil.generateSimpleAddress(BtcAccountManager.getInstance().getBtcCurrentReceiveAddress(accountAddress)));
             if (balance > 0) {
                 for (CryptoCurrency currency : cryptoCurrencies) {
                     if (currency.getName().toLowerCase().equals(BrahmaConst.BITCOIN)) {
@@ -338,26 +307,20 @@ public class BtcAccountAssetsActivity extends BaseActivity {
             }
             tvAccountBalance.setText(String.valueOf(CommonUtil.convertUnit(BrahmaConst.BITCOIN, new BigInteger(String.valueOf(balance)))));
             tvTotalAssets.setText(String.valueOf(totalAssets.setScale(2, BigDecimal.ROUND_HALF_UP)));
-            mTvSyncBlockHeight.setText(String.valueOf(kit.wallet().getLastBlockSeenHeight()));
-            if (kit.wallet().getLastBlockSeenTime() != null) {
-                mTvSyncBlockDatetime.setText(Utils.dateTimeFormat(kit.wallet().getLastBlockSeenTime()));
-            }
-            mTvPrivateKeyNum.setText(String.valueOf(kit.wallet().getActiveKeyChain().getIssuedExternalKeys()
-                    + kit.wallet().getActiveKeyChain().getIssuedInternalKeys()));
-            mTvTransactionNum.setText(String.valueOf(kit.wallet().getTransactionsByTime().size()));
+            mTvSyncBlockHeight.setText(String.valueOf(BtcAccountManager.getInstance().getBtcLastBlockSeenHeight(accountAddress)));
+            mTvSyncBlockDatetime.setText(BtcAccountManager.getInstance().getBtcLastBlockSeenTime(accountAddress));
+            mTvPrivateKeyNum.setText(String.valueOf(BtcAccountManager.getInstance().getBtcPrivateKeyCount(accountAddress)));
+            mTvTransactionNum.setText(String.valueOf(BtcAccountManager.getInstance().getTransactionAccount(accountAddress)));
 
             // exist pending transaction
-            if (!kit.wallet().getPendingTransactions().isEmpty()) {
+            long pendingAmount = BtcAccountManager.getInstance().getBitcoinPendingTxAmount(accountAddress);
+            // long pendingAmount = 0;
+            if (pendingAmount != 0) {
                 mLayoutPendingTransaction.setVisibility(View.VISIBLE);
-                Iterator iterator = kit.wallet().getPendingTransactions().iterator();
-                if (iterator.hasNext()) {
-                    Transaction transaction = (Transaction) iterator.next();
-                    long txAmount = transaction.getValue(kit.wallet()).value;
-                    if (txAmount > 0) {
-                        mTvPendingTransaction.setText(String.format("%s %s %s", getString(R.string.prompt_receiving), CommonUtil.convertBTCFromSatoshi(txAmount).toString(), getString(R.string.account_btc)));
-                    } else {
-                        mTvPendingTransaction.setText(String.format("%s %s %s", getString(R.string.prompt_sending), CommonUtil.convertBTCFromSatoshi(txAmount * -1).toString(), getString(R.string.account_btc)));
-                    }
+                if (pendingAmount > 0) {
+                    mTvPendingTransaction.setText(String.format("%s %s %s", getString(R.string.prompt_receiving), CommonUtil.convertBTCFromSatoshi(pendingAmount).toString(), getString(R.string.account_btc)));
+                } else {
+                    mTvPendingTransaction.setText(String.format("%s %s %s", getString(R.string.prompt_sending), CommonUtil.convertBTCFromSatoshi(pendingAmount * -1).toString(), getString(R.string.account_btc)));
                 }
             } else {
                 mLayoutPendingTransaction.setVisibility(View.GONE);
@@ -369,7 +332,7 @@ public class BtcAccountAssetsActivity extends BaseActivity {
     protected void onDestroy() {
         super.onDestroy();
         RxEventBus.get().unregister(EventTypeDef.BTC_ACCOUNT_SYNC, btcSyncStatus);
-        RxEventBus.get().unregister(EventTypeDef.BTC_APP_KIT_INIT_SET_UP, btcAppkitSetup);
         RxEventBus.get().unregister(EventTypeDef.BTC_TRANSACTION_CHANGE, btcTransactionStatus);
+        RxEventBus.get().unregister(EventTypeDef.CHANGE_BTC_ACCOUNT, btcAccountChangeCallback);
     }
 }

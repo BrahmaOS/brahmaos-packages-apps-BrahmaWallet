@@ -20,13 +20,12 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 
-import org.bitcoinj.kits.WalletAppKit;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import brahmaos.app.WalletManager;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
@@ -38,7 +37,7 @@ import io.brahmaos.wallet.brahmawallet.model.CryptoCurrency;
 import io.brahmaos.wallet.brahmawallet.service.BtcAccountManager;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
+import io.brahmaos.wallet.brahmawallet.view.CornerFlagView;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import io.brahmaos.wallet.util.RxEventBus;
@@ -64,6 +63,7 @@ public class BtcAccountFragment extends Fragment {
     private List<CryptoCurrency> cryptoCurrencies = new ArrayList<>();
     private BitcoinDownloadProgress bitcoinDownloadProgress;
     private Observable<BitcoinDownloadProgress> btcSyncStatus;
+    private Observable<Boolean> btcAccountChangeCallback;
 
     public static BtcAccountFragment newInstance(int page) {
         Bundle args = new Bundle();
@@ -100,12 +100,35 @@ public class BtcAccountFragment extends Fragment {
                         Log.i(tag(), e.toString());
                     }
                 });
+
+        // used to receive btc blocks sync progress
+        btcAccountChangeCallback = RxEventBus.get().register(EventTypeDef.CHANGE_BTC_ACCOUNT, Boolean.class);
+        btcAccountChangeCallback.onBackpressureBuffer()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Observer<Boolean>() {
+                    @Override
+                    public void onNext(Boolean flag) {
+                        accounts = MainService.getInstance().getBitcoinAccounts();
+                        recyclerViewAccounts.getAdapter().notifyDataSetChanged();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        e.printStackTrace();
+                        Log.i(tag(), e.toString());
+                    }
+                });
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         RxEventBus.get().unregister(EventTypeDef.BTC_ACCOUNT_SYNC, btcSyncStatus);
+        RxEventBus.get().unregister(EventTypeDef.CHANGE_BTC_ACCOUNT, btcAccountChangeCallback);
     }
 
     @Nullable
@@ -144,11 +167,10 @@ public class BtcAccountFragment extends Fragment {
         });
         mTvRestoreBtcAccount = parentView.findViewById(R.id.tv_restore_account);
         mTvRestoreBtcAccount.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), RestoreBtcAccountActivity.class);
+            Intent intent = new Intent(getActivity(), ImportBtcAccountActivity.class);
             startActivity(intent);
         });
-        //accounts = MainService.getInstance().getBitcoinAccounts();
-        accounts = new ArrayList<>();
+        accounts = MainService.getInstance().getBitcoinAccounts();
         if (accounts == null || accounts.size() == 0) {
             BLog.e(tag(), "the account is null");
             mLayoutCreateAccount.setVisibility(View.VISIBLE);
@@ -173,7 +195,7 @@ public class BtcAccountFragment extends Fragment {
                 int position = recyclerViewAccounts.getChildAdapterPosition(v);
                 AccountEntity account = accounts.get(position);
                 Intent intent = new Intent(getActivity(), BtcAccountAssetsActivity.class);
-                intent.putExtra(IntentParam.PARAM_ACCOUNT_ID, account.getId());
+                intent.putExtra(IntentParam.PARAM_ACCOUNT_ADDRESS, account.getAddress());
                 startActivity(intent);
             });
             return new AccountRecyclerAdapter.ItemViewHolder(rootView);
@@ -183,8 +205,8 @@ public class BtcAccountFragment extends Fragment {
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
             if (holder instanceof AccountRecyclerAdapter.ItemViewHolder) {
                 AccountRecyclerAdapter.ItemViewHolder itemViewHolder = (AccountRecyclerAdapter.ItemViewHolder) holder;
-                /*AccountEntity accountEntity = accounts.get(position);
-                setData(itemViewHolder, accountEntity);*/
+                AccountEntity accountEntity = accounts.get(position);
+                setData(itemViewHolder, accountEntity);
             }
         }
 
@@ -196,7 +218,7 @@ public class BtcAccountFragment extends Fragment {
                 return ;
             }
             ImageManager.showAccountAvatar(getActivity(), holder.ivAccountAvatar, account);
-            ImageManager.showAccountBackground(getActivity(), holder.ivAccountBg, account);
+            int colorId = ImageManager.showAccountBackground(getActivity(), holder.ivAccountBg, account);
             if (BrahmaConfig.getInstance().getCurrencyUnit().equals(BrahmaConst.UNIT_PRICE_CNY)) {
                 Glide.with(BtcAccountFragment.this)
                         .load(R.drawable.currency_cny_white)
@@ -210,26 +232,20 @@ public class BtcAccountFragment extends Fragment {
             // get current receive address and balance through walletAppKit
             BigDecimal totalAssets = BigDecimal.ZERO;
             long balance = 0;
-            WalletAppKit kit = BtcAccountManager.getInstance().getBtcWalletAppKit(account.getFilename());
-            if ( kit != null && kit.wallet() != null) {
-                holder.tvAccountAddress.setText(CommonUtil.generateSimpleAddress(kit.wallet().currentReceiveAddress().toBase58()));
-                balance = kit.wallet().getBalance().value;
-                if (balance > 0) {
-                    for (CryptoCurrency currency : cryptoCurrencies) {
-                        if (currency.getName().toLowerCase().equals(BrahmaConst.BITCOIN)) {
-                            double tokenPrice = currency.getPriceCny();
-                            if (BrahmaConfig.getInstance().getCurrencyUnit().equals(BrahmaConst.UNIT_PRICE_USD)) {
-                                tokenPrice = currency.getPriceUsd();
-                            }
-                            BigDecimal tokenValue = new BigDecimal(tokenPrice).multiply(CommonUtil.convertBTCFromSatoshi(new BigInteger(String.valueOf(balance))));
-                            totalAssets = totalAssets.add(tokenValue);
-                            break;
+            holder.tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
+            balance = BtcAccountManager.getInstance().getBtcAccountBalance(account.getAddress());
+            if (balance > 0) {
+                for (CryptoCurrency currency : cryptoCurrencies) {
+                    if (currency.getName().toLowerCase().equals(BrahmaConst.BITCOIN)) {
+                        double tokenPrice = currency.getPriceCny();
+                        if (BrahmaConfig.getInstance().getCurrencyUnit().equals(BrahmaConst.UNIT_PRICE_USD)) {
+                            tokenPrice = currency.getPriceUsd();
                         }
+                        BigDecimal tokenValue = new BigDecimal(tokenPrice).multiply(CommonUtil.convertBTCFromSatoshi(new BigInteger(String.valueOf(balance))));
+                        totalAssets = totalAssets.add(tokenValue);
+                        break;
                     }
                 }
-            } else {
-                BtcAccountManager.getInstance().initExistsWalletAppKit(account);
-                holder.tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
             }
             if (bitcoinDownloadProgress != null && !bitcoinDownloadProgress.isDownloaded()) {
                 holder.ivSyncStatus.setVisibility(View.VISIBLE);
@@ -239,6 +255,13 @@ public class BtcAccountFragment extends Fragment {
                 }
             } else {
                 holder.ivSyncStatus.setVisibility(View.GONE);
+            }
+
+            if (account.isDefault()) {
+                holder.ivCornerFlag.setVisibility(View.VISIBLE);
+                holder.ivCornerFlag.setTextColor(colorId);
+            } else {
+                holder.ivCornerFlag.setVisibility(View.GONE);
             }
 
             holder.tvAccountBalance.setText(String.valueOf(CommonUtil.convertUnit(BrahmaConst.BITCOIN, new BigInteger(String.valueOf(balance)))));
@@ -251,7 +274,7 @@ public class BtcAccountFragment extends Fragment {
         }
 
         class ItemViewHolder extends RecyclerView.ViewHolder {
-
+            CornerFlagView ivCornerFlag;
             ImageView ivAccountBg;
             ImageView ivAccountAvatar;
             TextView tvAccountName;
@@ -264,6 +287,7 @@ public class BtcAccountFragment extends Fragment {
 
             ItemViewHolder(View itemView) {
                 super(itemView);
+                ivCornerFlag = itemView.findViewById(R.id.iv_corner_flag);
                 ivAccountBg = itemView.findViewById(R.id.iv_account_bg);
                 ivAccountAvatar = itemView.findViewById(R.id.iv_account_avatar);
                 tvAccountName = itemView.findViewById(R.id.tv_account_name);

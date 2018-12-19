@@ -81,6 +81,7 @@ public class EthAccountFragment extends Fragment {
                     @Override
                     public void onNext(Boolean flag) {
                         accounts = MainService.getInstance().getEthereumAccounts();
+                        BLog.d(tag(), accounts.toString());
                         recyclerViewAccounts.getAdapter().notifyDataSetChanged();
                     }
 
@@ -187,8 +188,6 @@ public class EthAccountFragment extends Fragment {
             holder.tvAccountName.setText(account.getName());
             holder.tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
             BigDecimal totalAssets = BigDecimal.ZERO;
-            BLog.d(tag(), accountAssetsList.toString());
-            BLog.d(tag(), account.toString());
             for (AccountAssets assets : accountAssetsList) {
                 if (assets.getAccountEntity().getAddress().equals(account.getAddress()) &&
                         assets.getBalance().compareTo(BigInteger.ZERO) > 0) {

@@ -299,17 +299,17 @@ public class EthAccountDetailActivity extends BaseActivity {
     private void prepareDeleteAccount(String password) {
         progressDialog.show();
         EthAccountManager.getInstance()
-                .getPrivateKeyByPassword(account.getAddress(), password)
+                .checkPasswordForWallet(account.getAddress(), password)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
+                .subscribe(new Observer<Boolean>() {
                     @Override
-                    public void onNext(String privateKey) {
+                    public void onNext(Boolean flag) {
                         if (progressDialog != null) {
                             progressDialog.cancel();
                         }
-                        if (privateKey != null && BrahmaWeb3jService.getInstance().isValidPrivateKey(privateKey)) {
-                            showConfirmDeleteAccountDialog();
+                        if (flag) {
+                            showConfirmDeleteAccountDialog(password);
                         } else {
                             showPasswordErrorDialog();;
                         }
@@ -333,7 +333,7 @@ public class EthAccountDetailActivity extends BaseActivity {
                 });
     }
 
-    private void showConfirmDeleteAccountDialog() {
+    private void showConfirmDeleteAccountDialog(String password) {
         AlertDialog deleteDialog = new AlertDialog.Builder(this)
                 .setMessage(R.string.delete_account_tip)
                 .setCancelable(false)
@@ -341,17 +341,17 @@ public class EthAccountDetailActivity extends BaseActivity {
                     dialog.cancel();
                 }))
                 .setPositiveButton(R.string.delete, (dialog, which) -> {
-                    deleteAccount();
+                    deleteAccount(password);
                 })
                 .create();
         deleteDialog.show();
     }
 
-    private void deleteAccount() {
+    private void deleteAccount(String password) {
         if (progressDialog != null) {
             progressDialog.show();
         }
-        EthAccountManager.getInstance().deleteEthereumAccount(account.getAddress())
+        EthAccountManager.getInstance().deleteEthereumAccount(account.getAddress(), password)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Observer<Integer>() {
@@ -363,7 +363,7 @@ public class EthAccountDetailActivity extends BaseActivity {
                         if (ret == WalletManager.CODE_NO_ERROR) {
                             showLongToast(R.string.success_delete_account);
                             MainService.getInstance().loadAllAccounts();
-                            RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT);
+                            RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT, true);
                             finish();
                         } else {
                             showLongToast(R.string.error_delete_account);

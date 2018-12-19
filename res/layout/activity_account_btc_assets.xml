@@ -24,8 +24,7 @@
             app:contentScrim="?attr/colorPrimary"
             android:theme="@style/ToolBarStyle"
             app:titleTextAppearance="@style/ToolbarTitleText"
-            app:popupTheme="@style/AppTheme.PopupOverlay"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+            app:popupTheme="@style/AppTheme.PopupOverlay">
 
             <FrameLayout
                 android:fitsSystemWindows="true"

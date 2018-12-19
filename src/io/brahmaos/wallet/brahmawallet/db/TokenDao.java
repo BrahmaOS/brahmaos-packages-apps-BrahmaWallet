@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.db.entity.AllTokenEntity;
 import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
 import io.brahmaos.wallet.util.BLog;
@@ -63,6 +64,14 @@ public class TokenDao {
     public void init(SQLiteDatabase db) {
         db.execSQL(SQL_TABLE_G_ALL_TOKEN);
         db.execSQL(SQL_TABLE_G_CHOSEN_TOKEN);
+        db.execSQL("INSERT INTO " + TABLE_G_CHOSEN_TOKEN + " (name, address, short_name, avatar) " +
+                "values (\"BrahmaOS\", \"0xd7732e3783b0047aa251928960063f863ad022d8\", \"BRM\", "
+                + String.valueOf(R.drawable.icon_brm) + ")");
+        db.execSQL("INSERT INTO " + TABLE_G_CHOSEN_TOKEN + " (name, address, short_name, avatar) " +
+                "values (\"Ethereum\", \"\", \"ETH\", "
+                + String.valueOf(R.drawable.icon_eth) + ")");
+        db.execSQL("INSERT INTO " + TABLE_G_CHOSEN_TOKEN + " (name, address, short_name, avatar) " +
+                "values (\"Bitcoin\", \"btc\", \"BTC\", \"\")");
     }
 
     /**
@@ -70,7 +79,7 @@ public class TokenDao {
      *
      * @return all tokens
      */
-    public List<AllTokenEntity> loadAllTokens() {
+    public List<AllTokenEntity> getAllTokens() {
         SQLiteDatabase dbInstance = WalletDBMgr.getInstance().getDBInstance();
         String sql = "select * from " + TABLE_G_ALL_TOKEN;
         Cursor cursor = dbInstance.rawQuery(sql, null);
@@ -100,7 +109,7 @@ public class TokenDao {
      *
      * @return all tokens
      */
-    public List<AllTokenEntity> loadAllTokens(int showFlag) {
+    public List<AllTokenEntity> getAllTokens(int showFlag) {
         SQLiteDatabase dbInstance = WalletDBMgr.getInstance().getDBInstance();
         String sql = "select * from " + TABLE_G_ALL_TOKEN
                 + " where " + COL_G_ALL_TOKEN_SHOW_FLAG + " = " + showFlag;
@@ -157,8 +166,8 @@ public class TokenDao {
     public List<AllTokenEntity> queryAllTokens(String param) {
         SQLiteDatabase dbInstance = WalletDBMgr.getInstance().getDBInstance();
         String sql = "select * from " + TABLE_G_ALL_TOKEN
-                + " where " + COL_G_ALL_TOKEN_NAME + " like %" + param
-                + "% or " + COL_G_ALL_TOKEN_SHORT_NAME + " like %" + param + "%";
+                + " where " + COL_G_ALL_TOKEN_NAME + " like '%" + param
+                + "%' or " + COL_G_ALL_TOKEN_SHORT_NAME + " like '%" + param + "%'";
         Cursor cursor = dbInstance.rawQuery(sql, null);
         BLog.d(tag(), "queryAllTokens - " + sql);
         List<AllTokenEntity> allTokenEntityList = new ArrayList<>();
@@ -173,7 +182,6 @@ public class TokenDao {
 
             allTokenEntityList.add(tokenEntity);
         }
-
         if (cursor != null && !cursor.isClosed()) {
             cursor.close();
         }
@@ -226,7 +234,7 @@ public class TokenDao {
         SQLiteDatabase dbInstance = WalletDBMgr.getInstance().getDBInstance();
         String where = "LOWER(" + COL_G_CHOSEN_TOKEN_ADDRESS + ") = ?";
         String[] selectArgs = { address.toLowerCase() };
-        dbInstance.delete(TABLE_G_ALL_TOKEN, where, selectArgs);
+        dbInstance.delete(TABLE_G_CHOSEN_TOKEN, where, selectArgs);
     }
 
     public void upgrade(SQLiteDatabase db, int oldVersion, int newVersion) {

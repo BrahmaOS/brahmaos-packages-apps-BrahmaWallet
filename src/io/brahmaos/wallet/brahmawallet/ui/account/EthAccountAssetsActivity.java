@@ -40,6 +40,7 @@ import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transaction.EthTransactionsActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transaction.TransactionsActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
+import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 
 import io.brahmaos.wallet.util.RxEventBus;
@@ -149,6 +150,10 @@ public class EthAccountAssetsActivity extends BaseActivity {
     protected void onStart() {
         super.onStart();
         account = MainService.getInstance().getEthereumAccountByAddress(accountAddress);
+        if (account == null) {
+            finish();
+            return;
+        }
         initData();
         initAssets();
         tokenEntities = MainService.getInstance().getAllChosenTokens();;

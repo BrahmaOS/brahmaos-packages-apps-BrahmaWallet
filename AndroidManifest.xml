@@ -22,6 +22,7 @@
         android:largeHeap="true"
         android:roundIcon="@mipmap/ic_logo_round"
         android:supportsRtl="true"
+        android:screenOrientation="portrait"
         android:theme="@style/AppTheme">
 
         <!-- application spec -->
@@ -42,7 +43,8 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <activity android:name=".ui.SplashActivity">
+        <activity android:name=".ui.SplashActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -51,22 +53,29 @@
         </activity>
         <activity
             android:name=".ui.account.CreateAccountActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_create_account" />
         <activity
             android:name=".ui.MainActivity"
+            android:screenOrientation="portrait"
             android:launchMode="singleTask" />
-        <activity android:name=".ui.account.AccountsActivity" />
+        <activity android:name=".ui.account.AccountsActivity"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".ui.account.ImportEthereumAccountActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_import_account"
             android:theme="@style/AppTheme" />
-        <activity android:name=".ui.token.TokensActivity" />
+        <activity android:name=".ui.token.TokensActivity"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".ui.account.EthAccountAssetsActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_account_detail"
             android:theme="@style/AppTheme" />
         <activity
-            android:name=".ui.transfer.TransferActivity"
+            android:name=".ui.transfer.EthTransferActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_transfer"
             android:theme="@style/AppTheme" >
             <intent-filter>
@@ -74,48 +83,84 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
-        <activity android:name=".ui.account.EthAccountDetailActivity" />
-        <activity android:name=".ui.account.ChangeAccountNameActivity" />
+        <activity android:name=".ui.account.EthAccountDetailActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.ChangeAccountNameActivity"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".ui.account.AccountChangePasswordActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_account_change_password" />
         <activity
             android:name=".ui.setting.SettingsActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_settings" />
-        <activity android:name=".ui.account.AddressQrcodeActivity" />
-        <activity android:name=".ui.common.barcode.CaptureActivity" />
+        <activity android:name=".ui.account.AddressQrcodeActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.common.barcode.CaptureActivity"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".ui.account.AccountBackupActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_account_backup"
             android:theme="@style/AppTheme" />
-        <activity android:name=".ui.token.TokenSearchActivity" />
+        <activity android:name=".ui.token.TokenSearchActivity"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".ui.setting.AboutActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_about"
             android:theme="@style/AppTheme" />
         <activity
             android:name=".ui.setting.PrivacyPolicyActivity"
+            android:screenOrientation="portrait"
             android:label="@string/title_activity_privacy_policy"
             android:theme="@style/AppTheme" />
-        <activity android:name=".ui.setting.ServiceTermsActivity" />
-        <activity android:name=".ui.account.MnemonicBackupActivity" />
-        <activity android:name=".ui.account.ConfirmMnemonicActivity" />
-        <activity android:name=".ui.account.BackupKeystoreActivity" />
+        <activity android:name=".ui.setting.ServiceTermsActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.MnemonicBackupActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.ConfirmMnemonicActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.BackupKeystoreActivity"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".ui.FingerActivity"
+            android:screenOrientation="portrait"
             android:launchMode="singleInstance"
             android:theme="@style/FadeTheme" />
-        <activity android:name=".ui.transfer.InstantExchangeActivity"/>
-        <activity android:name=".ui.transaction.TransactionsActivity"/>
-        <activity android:name=".ui.transaction.EthTransactionsActivity"/>
-        <activity android:name=".ui.transaction.EtherscanTxsActivity"/>
-        <activity android:name=".ui.transaction.EtherscanTxDetailActivity"/>
-        <activity android:name=".ui.transaction.TransactionDetailActivity"/>
-        <activity android:name=".ui.setting.HelpActivity"/>
-        <activity android:name=".ui.setting.CelestialBodyIntroActivity"/>
-        <activity android:name=".ui.account.CreateEthAccountActivity"/>
-        <activity android:name=".ui.account.CreateBtcAccountActivity"/>
-        <activity android:name=".ui.account.RestoreBtcAccountActivity"/>
+        <activity android:name=".ui.transfer.InstantExchangeActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transaction.TransactionsActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transaction.EthTransactionsActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transaction.EtherscanTxsActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transaction.EtherscanTxDetailActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transaction.TransactionDetailActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.setting.HelpActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.setting.CelestialBodyIntroActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.CreateEthAccountActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.CreateBtcAccountActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.ImportBtcAccountActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.BtcAccountAssetsActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.BtcAccountDetailActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.BtcAccountChangePasswordActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.account.BtcAddressQrcodeActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transfer.BtcTransferActivity"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>

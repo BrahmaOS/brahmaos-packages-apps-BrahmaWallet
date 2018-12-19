@@ -13,4 +13,5 @@ public class EventTypeDef {
     public static final String BTC_TRANSACTION_BROADCAST_COMPLETE = "btc_transaction_broadcast_complete";
     public static final String CREATE_ETH_ACCOUNT = "create_eth_account";
     public static final String CHANGE_ETH_ACCOUNT = "change_eth_account";
+    public static final String CHANGE_BTC_ACCOUNT = "change_btc_account";
 }

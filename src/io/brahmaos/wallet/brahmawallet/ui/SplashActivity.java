@@ -1,6 +1,5 @@
 package io.brahmaos.wallet.brahmawallet.ui;
 
-import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,8 +25,8 @@ import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.db.entity.AllTokenEntity;
 import io.brahmaos.wallet.brahmawallet.model.TokensVersionInfo;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
+import io.brahmaos.wallet.brahmawallet.service.TokenService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
-import io.brahmaos.wallet.brahmawallet.viewmodel.AccountViewModel;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
 import rx.Observer;
@@ -64,55 +63,68 @@ public class SplashActivity extends BaseActivity {
     @Override
     protected void onStart() {
         super.onStart();
-
-        Networks.getInstance().getWalletApi()
-                .getAllTokens()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<List<Object>>>() {
-                    @Override
-                    public void onCompleted() {
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                        flagAllTokens = true;
-                        jumpToMain();
-                    }
-
-                    @Override
-                    public void onNext(List<List<Object>> apiRespResult) {
-                        List<AllTokenEntity> allTokenEntities = new ArrayList<>();
-                        // add BRM and ETH
-                        AllTokenEntity ethToken = new AllTokenEntity(0, "Ethereum", "ETH",
-                                "", "", BrahmaConst.DEFAULT_TOKEN_SHOW_FLAG);
-                        AllTokenEntity brmToken = new AllTokenEntity(0, "BrahmaOS", "BRM",
-                                "0xd7732e3783b0047aa251928960063f863ad022d8", "", BrahmaConst.DEFAULT_TOKEN_SHOW_FLAG);
-                        allTokenEntities.add(brmToken);
-                        allTokenEntities.add(ethToken);
-                        for (List<Object> token : apiRespResult) {
-                            if (!token.get(2).toString().toLowerCase().equals(BrahmaConst.BRAHMAOS_TOKEN)) {
-                                AllTokenEntity tokenEntity = new AllTokenEntity();
-                                tokenEntity.setAddress(token.get(0).toString());
-                                tokenEntity.setShortName(token.get(1).toString());
-                                tokenEntity.setName(token.get(2).toString());
-                                HashMap avatarObj = (HashMap) token.get(3);
-                                tokenEntity.setAvatar(avatarObj.get("128x128").toString());
-                                if (apiRespResult.indexOf(token) < BrahmaConst.DEFAULT_TOKEN_COUNT) {
-                                    tokenEntity.setShowFlag(BrahmaConst.DEFAULT_TOKEN_SHOW_FLAG);
-                                }
-                                allTokenEntities.add(tokenEntity);
-                            }
-
+        List<AllTokenEntity> allTokens = TokenService.getInstance().getAllTokensFromDB();
+        if (allTokens != null && allTokens.size() > 0) {
+            flagAllTokens = true;
+            jumpToMain();
+        } else {
+            Networks.getInstance().getWalletApi()
+                    .getAllTokens()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Observer<List<List<Object>>>() {
+                        @Override
+                        public void onCompleted() {
                         }
-                        BLog.i(tag(), "the result:" + allTokenEntities.size());
-                        MainService.getInstance().loadAllTokens(allTokenEntities);
 
-                        flagAllTokens = true;
-                        jumpToMain();
-                    }
-                });
+                        @Override
+                        public void onError(Throwable e) {
+                            e.printStackTrace();
+                            flagAllTokens = true;
+                            jumpToMain();
+                        }
+
+                        @Override
+                        public void onNext(List<List<Object>> apiRespResult) {
+                            List<AllTokenEntity> allTokenEntities = new ArrayList<>();
+                            // add BRM and ETH
+                            AllTokenEntity ethToken = new AllTokenEntity(0, "Ethereum", "ETH",
+                                    "", "", BrahmaConst.DEFAULT_TOKEN_SHOW_FLAG);
+                            AllTokenEntity brmToken = new AllTokenEntity(0, "BrahmaOS", "BRM",
+                                    "0xd7732e3783b0047aa251928960063f863ad022d8", "", BrahmaConst.DEFAULT_TOKEN_SHOW_FLAG);
+                            allTokenEntities.add(brmToken);
+                            allTokenEntities.add(ethToken);
+                            for (List<Object> token : apiRespResult) {
+                                if (!token.get(2).toString().toLowerCase().equals(BrahmaConst.BRAHMAOS_TOKEN)) {
+                                    AllTokenEntity tokenEntity = new AllTokenEntity();
+                                    tokenEntity.setAddress(token.get(0).toString());
+                                    tokenEntity.setShortName(token.get(1).toString());
+                                    tokenEntity.setName(token.get(2).toString());
+                                    HashMap avatarObj = (HashMap) token.get(3);
+                                    tokenEntity.setAvatar(avatarObj.get("128x128").toString());
+                                    if (apiRespResult.indexOf(token) < BrahmaConst.DEFAULT_TOKEN_COUNT) {
+                                        tokenEntity.setShowFlag(BrahmaConst.DEFAULT_TOKEN_SHOW_FLAG);
+                                    }
+                                    allTokenEntities.add(tokenEntity);
+                                }
+
+                            }
+                            BLog.i(tag(), "the result:" + allTokenEntities.size());
+                            TokenService.getInstance()
+                                    .loadAllTokens(allTokenEntities)
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(() -> {
+
+                                            },
+                                            throwable -> {
+                                                BLog.e(tag(), "Unable to check token", throwable);
+                                            });
+                            flagAllTokens = true;
+                            jumpToMain();
+                        }
+                    });
+        }
 
         splashCountdown();
     }

@@ -18,12 +18,17 @@ package io.brahmaos.wallet.brahmawallet;
 
 import android.app.Application;
 import android.content.Intent;
+import android.content.IntentFilter;
 
 import java.util.Timer;
 import java.util.TimerTask;
 
+import brahmaos.content.BrahmaIntent;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.db.WalletDBMgr;
+import io.brahmaos.wallet.brahmawallet.receiver.BtcDownloadProgressReceiver;
+import io.brahmaos.wallet.brahmawallet.receiver.BtcTransactionReceiver;
+import io.brahmaos.wallet.brahmawallet.receiver.BtcTxBroadcastCompleteReceiver;
 import io.brahmaos.wallet.brahmawallet.repository.DataRepository;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.FingerActivity;
@@ -82,6 +87,18 @@ public class WalletApp extends Application {
                 timerTimeOut.schedule(timerTask, 5000);
             }
         });
+
+        BtcDownloadProgressReceiver btcDownloadProgressReceiver = new BtcDownloadProgressReceiver();
+        IntentFilter intentFilter = new IntentFilter(BrahmaIntent.ACTION_CHAIN_DOWNLOAD_PROGRESS);
+        getApplicationContext().registerReceiver(btcDownloadProgressReceiver, intentFilter);
+
+        BtcTransactionReceiver btcTransactionReceiver = new BtcTransactionReceiver();
+        IntentFilter txIntentFilter = new IntentFilter(BrahmaIntent.ACTION_TRANSACTION_CONFIDENCE_CHANGED);
+        getApplicationContext().registerReceiver(btcTransactionReceiver, txIntentFilter);
+
+        BtcTxBroadcastCompleteReceiver btcTxBroadcastCompleteReceiver = new BtcTxBroadcastCompleteReceiver();
+        IntentFilter txBroadcastCompleteIntentFilter = new IntentFilter(BrahmaIntent.ACTION_TRANSACTION_BROADCAST_COMPLETE);
+        getApplicationContext().registerReceiver(btcTxBroadcastCompleteReceiver, txBroadcastCompleteIntentFilter);
     }
 
     public boolean isFirstOpenApp() {

@@ -4,6 +4,7 @@ LOCAL_PACKAGE_NAME := BrahmaWallet
 LOCAL_CERTIFICATE := platform
 LOCAL_PRIVILEGED_MODULE := true
 LOCAL_MODULE_TAGS := optional
+LOCAL_DEX_PREOPT := false
 
 #LOCAL_SDK_VERSION := current
 
