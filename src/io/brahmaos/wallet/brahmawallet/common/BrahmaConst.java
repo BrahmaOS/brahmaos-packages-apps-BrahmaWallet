@@ -4,12 +4,13 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 
+import io.rayup.sdk.RayUpConst;
 
 /**
  * Definition of commonly used constants
  */
 public class BrahmaConst {
-    public static final int APP_ID = 1;
+    public static final int APP_ID = 2;
     public static final int DEFAULT_WALLET_ACCOUNT_ID = 0;
     public static final String IPFS_BASE_URL = "https://ipfs.io/";
     public static final String KYBER_NETWORK_URL = "https://tracker.kyber.network/";
@@ -36,8 +37,8 @@ public class BrahmaConst {
     // unit sat/b
     public static final int DEFAULT_MINER_FEE = 50;
 
-    public static final String MAINNET_URL = "https://mainnet.infura.io";
-    public static final String ROPSTEN_TEST_URL = "https://ropsten.infura.io";
+    public static final String MAINNET_URL = "https://mainnet.infura.io/Gy3Csyt4bzKIGsctm3g0";
+    public static final String ROPSTEN_TEST_URL = "https://ropsten.infura.io/Gy3Csyt4bzKIGsctm3g0";
     public static final String INFURANET_TEST_URL = "https://infuranet.infura.io";
     public static final String KOVAN_TEST_URL = "https://kovan.infura.io";
     public static final String RINKEBY_TEST_URL = "https://rinkeby.infura.io";
@@ -64,8 +65,37 @@ public class BrahmaConst {
 
     public static final Double MAIN_PAGE_HEADER_RATIO = 0.382;
     public static final String FEEDBACK_URL = "https://github.com/BrahmaOS/wallet/issues";
+    public static final String BLOCKCHAIN_BASE_URL = "https://blockchain.com/btc/tx/";
 
     // Account type
     public static final int ETH_ACCOUNT_TYPE = 1;
     public static final int BTC_ACCOUNT_TYPE = 2;
+
+    public static final int COIN_COUNT = 3000;
+
+    // KNC contract addresses
+    public static final String KNC_MAIN_NETWORK_CONTRACT_ADDRESS = "0xdd974d5c2e2928dea5f71b9825b8b646686bd200";
+    public static final String KNC_ROPSTEN_NETWORK_CONTRACT_ADDRESS = "0x4E470dc7321E84CA96FcAEDD0C8aBCebbAEB68C6";
+
+    // coin code base rayup.io
+    public static final int COIN_CODE_BTC = RayUpConst.COIN_BTC;
+    public static final int COIN_CODE_ETH = RayUpConst.COIN_ETH;
+    public static final int COIN_CODE_BRM = RayUpConst.COIN_BRM;
+
+    public static final String COIN_BTC = "Bitcoin";
+    public static final String COIN_ETH = "Ethereum";
+    public static final String COIN_BRM = "BrahmaOS";
+    public static final String COIN_SYMBOL_BTC = "BTC";
+    public static final String COIN_SYMBOL_ETH = "ETH";
+    public static final String COIN_SYMBOL_BRM = "BRM";
+    public static final String COIN_BRM_ADDRESS = "0xd7732e3783b0047aa251928960063f863ad022d8";
+    public static final String COIN_ETH_ADDRESS = "";
+
+    public static final String rayupAccessKeyId = "727965f2c89511e8af75560001a43649";
+    public static final String rayupAccessKeySecret = "cnlo/siVEeivdVYAAaQ2SQ==";
+
+    // brahma pay
+    public static final int PAY_CODE_SUCCESS = 0;
+    public static final int PAY_CODE_INVALID_BLOCKCHAIN = 101;
+    public static final int PAY_CODE_NO_ACCOUNT = 102;
 }

@@ -16,6 +16,24 @@
         <item name="android:windowTranslucentStatus">true</item>
     </style>
 
+    <style name="animfade" parent="@android:style/Animation.Activity">
+        <!--<item name="android:activityOpenEnterAnimation">@anim/bottom_popupwindow_in</item>
+        <item name="android:activityOpenExitAnimation">@anim/bottom_popupwindow_out</item>
+        <item name="android:activityCloseEnterAnimation">@anim/bottom_popupwindow_in</item>
+        <item name="android:activityCloseExitAnimation">@anim/bottom_popupwindow_out</item>-->
+        <item name="android:activityOpenEnterAnimation">@null</item>
+        <item name="android:activityOpenExitAnimation">@null</item>
+        <item name="android:activityCloseEnterAnimation">@null</item>
+        <item name="android:activityCloseExitAnimation">@null</item>
+    </style>
+
+    <style name="transparent_activity" parent="AppTheme">
+        <item name="android:windowBackground">@color/color_divider</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowAnimationStyle">@style/animfade</item>
+    </style>
+
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="AppTheme.LightAppBarOverlay" parent="ThemeOverlay.AppCompat.ActionBar">

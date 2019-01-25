@@ -131,29 +131,21 @@
                         android:paddingTop="@dimen/space_small"
                         android:paddingBottom="@dimen/space_smaller">
                         <TextView
-                            android:id="@+id/tv_assets_class"
+                            android:id="@+id/tv_add_assets"
                             android:layout_centerVertical="true"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textSize="@dimen/font_size_body"
+                            android:padding="@dimen/space_unit"
                             android:textColor="@color/white"
-                            android:text="@string/assets_class"/>
+                            android:text="@string/action_add_assets"/>
                         <TextView
-                            android:id="@+id/tv_assets_categories_num"
-                            android:layout_centerVertical="true"
+                            android:id="@+id/tv_instant_exchange"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/space_small"
-                            android:layout_toEndOf="@id/tv_assets_class"
-                            android:textSize="@dimen/font_size_body"
-                            android:textColor="@color/white"/>
-                        <ImageView
-                            android:id="@+id/iv_choose_token"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_margin="@dimen/space_unit"
+                            android:padding="@dimen/space_unit"
                             android:layout_alignParentEnd="true"
-                            android:src="@drawable/ic_add_circle_outline"/>
+                            android:textColor="@color/white"
+                            android:text="@string/menu_instant_exchange"/>
                     </RelativeLayout>
                 </LinearLayout>
                 <android.support.v7.widget.RecyclerView

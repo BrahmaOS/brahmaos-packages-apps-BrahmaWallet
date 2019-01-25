@@ -239,4 +239,8 @@ public class BrahmaConfig {
     public String getFeedbackUrl() {
         return BrahmaConst.FEEDBACK_URL;
     }
+
+    public String getBlochchainTxDetailUrl(String txHash) {
+        return BrahmaConst.BLOCKCHAIN_BASE_URL + txHash;
+    }
 }

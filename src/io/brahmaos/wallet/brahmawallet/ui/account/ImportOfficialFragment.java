@@ -174,92 +174,58 @@ public class ImportOfficialFragment extends Fragment {
         }
         BLog.i(tag(), "the password is:" + password);
         try {
-            ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-            WalletFile walletFile = objectMapper.readValue(officialKeystore, WalletFile.class);
-            String address = BrahmaWeb3jService.getInstance().prependHexPrefix(walletFile.getAddress());
-            BLog.i(tag(), "the address is :" + address);
-
-            // check the account address
-            if (accounts != null && accounts.size() > 0) {
-                for (AccountEntity accountEntity : accounts) {
-                    if (accountEntity.getAddress().equals(address)) {
-                        cancel = true;
-                        break;
-                    }
-                }
-                if (cancel) {
-                    // dialog show the account exists
-                    AlertDialog dialogTip = new AlertDialog.Builder(getActivity())
-                            .setMessage(R.string.error_account_exists)
-                            .setNegativeButton(R.string.cancel, (dialog, which) -> dialog.cancel())
-                            .create();
-                    dialogTip.show();
-                    etKeystore.requestFocus();
-                    btnImportAccount.setEnabled(true);
-                    return;
-                }
-            }
-
             customProgressDialog = new CustomProgressDialog(getActivity(),
                     R.style.CustomProgressDialogStyle,
                     getString(R.string.progress_import_account));
             customProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             customProgressDialog.setCancelable(false);
             customProgressDialog.show();
-            if (WalletUtils.isValidAddress(address)) {
-                EthAccountManager.getInstance().restoreEthAccountWithKeystore(name, password, officialKeystore)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Observer<WalletData>() {
+            EthAccountManager.getInstance().restoreEthAccountWithKeystore(name, password, officialKeystore)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(new Observer<WalletData>() {
 
-                            @Override
-                            public void onCompleted() {
-                                if (customProgressDialog != null) {
-                                    customProgressDialog.cancel();
-                                }
+                        @Override
+                        public void onCompleted() {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.cancel();
+                            }
+                        }
+
+                        @Override
+                        public void onError(Throwable throwable) {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.cancel();
+                            }
+                            throwable.printStackTrace();
+                            Toast.makeText(getContext(), R.string.error_import_keystore, Toast.LENGTH_LONG).show();
+                            etKeystore.requestFocus();
+                            btnImportAccount.setEnabled(true);
+                        }
+
+                        @Override
+                        public void onNext(WalletData walletData) {
+                            if (customProgressDialog != null) {
+                                customProgressDialog.cancel();
                             }
 
-                            @Override
-                            public void onError(Throwable throwable) {
-                                if (customProgressDialog != null) {
-                                    customProgressDialog.cancel();
-                                }
-                                throwable.printStackTrace();
+                            if (walletData != null) {
+                                // hide soft input board
+                                RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT, false);
+                                getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
+                                Toast.makeText(getContext(), R.string.success_import_account, Toast.LENGTH_LONG).show();
+                                Intent intent = new Intent();
+                                getActivity().setResult(Activity.RESULT_OK, intent);
+                                getActivity().finish();
+                            } else {
                                 Toast.makeText(getContext(), R.string.error_import_keystore, Toast.LENGTH_LONG).show();
                                 etKeystore.requestFocus();
                                 btnImportAccount.setEnabled(true);
                             }
+                        }
+                    });
 
-                            @Override
-                            public void onNext(WalletData walletData) {
-                                if (customProgressDialog != null) {
-                                    customProgressDialog.cancel();
-                                }
-
-                                if (walletData != null) {
-                                    // hide soft input board
-                                    RxEventBus.get().post(EventTypeDef.CHANGE_ETH_ACCOUNT, false);
-                                    getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
-                                    Toast.makeText(getContext(), R.string.success_import_account, Toast.LENGTH_LONG).show();
-                                    Intent intent = new Intent();
-                                    getActivity().setResult(Activity.RESULT_OK, intent);
-                                    getActivity().finish();
-                                } else {
-                                    Toast.makeText(getContext(), R.string.error_import_keystore, Toast.LENGTH_LONG).show();
-                                    etKeystore.requestFocus();
-                                    btnImportAccount.setEnabled(true);
-                                }
-                            }
-                        });
-            } else {
-                BLog.e(tag(), "the error keystore about address");
-                Toast.makeText(getContext(), R.string.error_account_address, Toast.LENGTH_LONG).show();
-                btnImportAccount.setEnabled(true);
-                etKeystore.requestFocus();
-                customProgressDialog.cancel();
-            }
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             Toast.makeText(getActivity(), R.string.error_keystore, Toast.LENGTH_LONG).show();
             btnImportAccount.setEnabled(true);

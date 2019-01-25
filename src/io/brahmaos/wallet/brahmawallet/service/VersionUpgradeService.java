@@ -189,7 +189,7 @@ public class VersionUpgradeService {
         }
         File file = new File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                , "download/BrahmaWallet.apk");
+                , "BrahmaWallet.apk");
         if (file.exists()) {
             file.delete();
         }
@@ -197,7 +197,7 @@ public class VersionUpgradeService {
         DownloadManager downloadManager = (DownloadManager) activity.getSystemService(Context.DOWNLOAD_SERVICE);
         DownloadManager.Request request = new DownloadManager.Request(Uri.parse(newVer.getPkgUrl()));
         request.setVisibleInDownloadsUi(true);
-        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "download/BrahmaWallet.apk");
+        request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "BrahmaWallet.apk");
         request.setMimeType("application/vnd.android.package-archive");
         downloadManager.enqueue(request);
     }

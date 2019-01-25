@@ -219,7 +219,7 @@ public class EthTransferActivity extends BaseActivity {
                     @Override
                     public void onNext(String gasPrice) {
                         BLog.d(tag(), "the gas price is: " + gasPrice);
-                        BigDecimal gasPriceGwei = Convert.fromWei(new BigDecimal(gasPrice), Convert.Unit.GWEI);
+                        BigDecimal gasPriceGwei = new BigDecimal(gasPrice);
                         etGasPrice.setText(String.valueOf(gasPriceGwei));
                     }
 

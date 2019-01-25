@@ -207,6 +207,7 @@ public class TokenSearchActivity extends BaseActivity {
                 currentToken.setName(token.getName());
                 currentToken.setShortName(token.getShortName());
                 currentToken.setAvatar(token.getAvatar());
+                currentToken.setCode(token.getCode());
                 holder.switchToken.setOnCheckedChangeListener(null);
                 holder.switchToken.setChecked(checked);
                 holder.switchToken.setOnCheckedChangeListener((buttonView, isChecked) -> {

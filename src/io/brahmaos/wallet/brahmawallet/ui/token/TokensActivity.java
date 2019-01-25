@@ -45,7 +45,7 @@ public class TokensActivity extends BaseActivity {
     private List<AllTokenEntity> allTokens = new ArrayList<>();
     // test ropsten
     private AllTokenEntity ropstenKyberToken = new AllTokenEntity(0, "Kyber Network Test", "KNC(TEST)",
-            "0x4E470dc7321E84CA96FcAEDD0C8aBCebbAEB68C6", "", 1);
+            "0x4E470dc7321E84CA96FcAEDD0C8aBCebbAEB68C6", "", 1, 1000001);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -157,6 +157,7 @@ public class TokensActivity extends BaseActivity {
                 currentToken.setName(token.getName());
                 currentToken.setShortName(token.getShortName());
                 currentToken.setAvatar(token.getAvatar());
+                currentToken.setCode(token.getCode());
                 holder.switchToken.setOnCheckedChangeListener(null);
                 holder.switchToken.setChecked(checked);
                 holder.switchToken.setOnCheckedChangeListener((buttonView, isChecked) -> {

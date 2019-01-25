@@ -90,7 +90,6 @@ public class MainActivity extends BaseActivity
     private TextView tvCurrencyUnit;
     private TextView tvTotalAssets;
     private ImageView ivAssetsVisible;
-    private TextView tvTokenCategories;
     private RecyclerView recyclerViewAssets;
     private DrawerLayout drawer;
     private NavigationView navigationView;
@@ -168,7 +167,6 @@ public class MainActivity extends BaseActivity
                 });
 
         VersionUpgradeService.getInstance().checkVersion(this, true, this);
-        TokenService.getInstance().getTokensLatestVersion();
 
         initView();
         initData();
@@ -182,7 +180,6 @@ public class MainActivity extends BaseActivity
         tvCurrencyUnit = findViewById(R.id.tv_money_unit);
         tvTotalAssets = findViewById(R.id.tv_total_assets);
         ivAssetsVisible = findViewById(R.id.iv_assets_visibility);
-        tvTokenCategories = findViewById(R.id.tv_assets_categories_num);
         recyclerViewAssets = findViewById(R.id.assets_recycler);
         drawer = findViewById(R.id.drawer_layout);
         navigationView = findViewById(R.id.nav_view);
@@ -235,12 +232,6 @@ public class MainActivity extends BaseActivity
 
         tvCurrencyUnit.setText(BrahmaConfig.getInstance().getCurrencyUnit());
 
-        ImageView ivChooseToken = findViewById(R.id.iv_choose_token);
-        ivChooseToken.setOnClickListener(v -> {
-            Intent intent = new Intent(this, TokensActivity.class);
-            startActivity(intent);
-        });
-
         ivAssetsVisible.setOnClickListener(v -> {
             if (BrahmaConfig.getInstance().isAssetsVisible()) {
                 BrahmaConfig.getInstance().setAssetsVisible(false);
@@ -248,6 +239,18 @@ public class MainActivity extends BaseActivity
                 BrahmaConfig.getInstance().setAssetsVisible(true);
             }
             showAssetsCurrency();
+        });
+
+        TextView tvAddAssets = findViewById(R.id.tv_add_assets);
+        tvAddAssets.setOnClickListener(v -> {
+            Intent intent = new Intent(this, TokensActivity.class);
+            startActivity(intent);
+        });
+
+        TextView tvInstantExchange = findViewById(R.id.tv_instant_exchange);
+        tvInstantExchange.setOnClickListener(v -> {
+            Intent intent = new Intent(this, InstantExchangeActivity.class);
+            startActivity(intent);
         });
 
         changeNetwork();
@@ -346,18 +349,16 @@ public class MainActivity extends BaseActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.fragment_wallet, menu);
+        getMenuInflater().inflate(R.menu.menu_accounts, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         //noinspection SimplifiableIfStatement
-        if (item.getItemId() == R.id.menu_instant_exchange) {
-            if (cacheAccounts.size() > 0) {
-                Intent intent = new Intent(this, InstantExchangeActivity.class);
-                startActivity(intent);
-            }
+        if (item.getItemId() == R.id.menu_accounts) {
+            Intent intent = new Intent(this, AccountsActivity.class);
+            startActivity(intent);
         }
         return super.onOptionsItemSelected(item);
     }
@@ -411,11 +412,12 @@ public class MainActivity extends BaseActivity
         if (cacheTokens != null && cacheTokens.size() > 0) {
             StringBuilder stringBuilder = new StringBuilder();
             for (TokenEntity token : cacheTokens) {
-                stringBuilder.append(token.getShortName()).append(",");
+                stringBuilder.append(token.getCode()).append(",");
             }
             symbols = stringBuilder.toString();
         } else {
-            symbols = "ETH,BRM";
+            symbols = String.format("%d,%d,%d", BrahmaConst.COIN_CODE_BRM,
+                    BrahmaConst.COIN_CODE_ETH, BrahmaConst.COIN_CODE_BTC);
         }
         MainService.getInstance().fetchCurrenciesFromNet(symbols)
                 .subscribeOn(Schedulers.io())

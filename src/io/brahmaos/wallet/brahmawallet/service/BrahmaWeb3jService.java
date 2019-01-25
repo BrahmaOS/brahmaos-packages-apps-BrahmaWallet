@@ -161,111 +161,6 @@ public class BrahmaWeb3jService extends BaseService{
                 WalletUtils.isValidAddress(address);
     }
 
-    /**
-     * Initiate a transaction request and
-     * issue different events at different stages of the transaction,
-     * for example: verifying the account, sending request
-     * @return 1: verifying the account 2: sending request 10: transfer success
-     */
-    public Observable<Integer> sendTransfer(AccountEntity account, TokenEntity token, String password,
-                                            String destinationAddress, BigDecimal amount,
-                                            BigDecimal gasPrice, BigInteger gasLimit, String remark) {
-        return Observable.create(e -> {
-            try {
-                e.onNext(1);
-                Web3j web3 = Web3jFactory.build(
-                        new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
-                Credentials credentials = getEthAccountCredetials(account, password);
-                BLog.i(tag(), "load credential success");
-                e.onNext(2);
-                BigDecimal gasPriceWei = Convert.toWei(gasPrice, Convert.Unit.GWEI);
-                if (token.getName().toLowerCase().equals(BrahmaConst.ETHEREUM)) {
-                    RawTransactionManager txManager = new RawTransactionManager(web3, credentials);
-                    EthSendTransaction transactionResponse = txManager.sendTransaction(gasPriceWei.toBigIntegerExact(),
-                            gasLimit, destinationAddress, Numeric.toHexString(remark.getBytes()), Convert.toWei(amount, Convert.Unit.ETHER).toBigInteger());
-                    if (transactionResponse.hasError()) {
-                        throw new RuntimeException("Error processing transaction request: "
-                                + transactionResponse.getError().getMessage());
-                    }
-
-                    BLog.i(tag(), "remark: "
-                            + remark + "; hex remark:" + Numeric.toHexString(remark.getBytes()));
-
-                    String transactionHash = transactionResponse.getTransactionHash();
-                    BLog.i(tag(), "Transaction begin, view it at https://rinkeby.etherscan.io/tx/"
-                            + transactionHash);
-
-                    TransactionReceipt transferReceipt = sendTransactionReceiptRequest(web3, transactionHash);
-                    for (int i = 0; i < ATTEMPTS; i++) {
-                        if (transferReceipt == null) {
-                            Thread.sleep(SLEEP_DURATION);
-                            transferReceipt = sendTransactionReceiptRequest(web3, transactionHash);
-                        } else {
-                            break;
-                        }
-                    }
-
-                    BLog.i(tag(), "Transaction complete, view it at https://rinkeby.etherscan.io/tx/"
-                            + transferReceipt.getTransactionHash());
-                } else {
-                    Function function = new Function(
-                            "transfer",
-                            Arrays.<Type>asList(new Address(destinationAddress),
-                                    new Uint256(amount.multiply(new BigDecimal(Math.pow(10, 18))).toBigInteger())),
-                            Collections.<TypeReference<?>>emptyList());
-                    String encodedFunction = FunctionEncoder.encode(function);
-
-                    RawTransactionManager txManager = new RawTransactionManager(web3, credentials);
-                    EthSendTransaction transactionResponse = txManager.sendTransaction(
-                            gasPriceWei.toBigIntegerExact(), gasLimit, token.getAddress(), encodedFunction, BigInteger.ZERO);
-
-                    if (transactionResponse.hasError()) {
-                        throw new RuntimeException("Error processing transaction request: "
-                                + transactionResponse.getError().getMessage());
-                    }
-                    String transactionHash = transactionResponse.getTransactionHash();
-                    BLog.i(tag(), "===> transactionHash: " + transactionHash);
-                }
-                e.onNext(10);
-            } catch (IOException | UnreadableWalletException | InterruptedException e1) {
-                e1.printStackTrace();
-                e.onError(e1);
-            }
-            e.onCompleted();
-        });
-    }
-
-    private TransactionReceipt sendTransactionReceiptRequest(
-            Web3j web3j, String transactionHash) throws IOException {
-        EthGetTransactionReceipt transactionReceipt =
-                web3j.ethGetTransactionReceipt(transactionHash).send();
-        if (transactionReceipt.hasError()) {
-            throw new RuntimeException("Error processing request: "
-                    + transactionReceipt.getError().getMessage());
-        }
-
-        return transactionReceipt.getTransactionReceipt();
-    }
-
-    public Observable<String> getPrivateKeyByPassword(String fileName, String password) {
-        return Observable.create(e -> {
-            try {
-                Credentials credentials = WalletUtils.loadCredentials(
-                        password, context.getFilesDir() + "/" +  fileName);
-                BigInteger privateKey = credentials.getEcKeyPair().getPrivateKey();
-                if (WalletUtils.isValidPrivateKey(privateKey.toString(16))) {
-                    e.onNext(privateKey.toString(16));
-                } else {
-                    e.onNext("");
-                }
-            } catch (IOException | CipherException e1) {
-                e1.printStackTrace();
-                e.onError(e1);
-            }
-            e.onCompleted();
-        });
-    }
-
     public boolean isValidPrivateKey(String privateKey) {
         return WalletUtils.isValidPrivateKey(privateKey);
     }
@@ -313,11 +208,6 @@ public class BrahmaWeb3jService extends BaseService{
             try {
                 Web3j web3 = Web3jFactory.build(
                         new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
-                ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-                WalletFile walletFile = objectMapper.readValue(BrahmaConst.DEFAULT_KEYSTORE, WalletFile.class);
-                Credentials credentials = Credentials.create(Wallet.decrypt("654321", walletFile));
-                TransactionManager transactionManager = new RawTransactionManager(web3, credentials);
-
                 String rateContractAddress = BrahmaConst.KYBER_MAIN_NETWORK_ADDRESS;
                 if (BrahmaConfig.getInstance().getNetworkUrl().equals(BrahmaConst.ROPSTEN_TEST_URL)) {
                     rateContractAddress = BrahmaConst.KYBER_ROPSTEN_NETWORK_ADDRESS;
@@ -355,7 +245,7 @@ public class BrahmaWeb3jService extends BaseService{
                 String encodedFunction = FunctionEncoder.encode(function);
                 org.web3j.protocol.core.methods.response.EthCall ethCall = web3.ethCall(
                         Transaction.createEthCallTransaction(
-                                transactionManager.getFromAddress(), rateContractAddress, encodedFunction),
+                                BrahmaConst.COIN_BRM_ADDRESS, rateContractAddress, encodedFunction),
                         DefaultBlockParameterName.LATEST)
                         .send();
 
@@ -371,66 +261,6 @@ public class BrahmaWeb3jService extends BaseService{
                 }
                 e.onNext(rateResult);
             } catch (Exception e1) {
-                e1.printStackTrace();
-                e.onError(e1);
-            }
-            e.onCompleted();
-        });
-    }
-
-    /**
-     * Initiate a instant exchange transaction request and
-     * issue different events at different stages of the transaction,
-     * for example: verifying the account, sending request
-     * @return 1: verifying the account 2: sending request 10: transfer success
-     */
-    public Observable<Integer> sendInstantExchangeTransfer(AccountEntity account, KyberToken sendToken, KyberToken receiveToken,
-                                                           BigDecimal sendAmount, BigDecimal maxReceiveAmount, BigInteger minConversionRate,
-                                                           String password, BigDecimal gasPrice, BigInteger gasLimit) {
-        return Observable.create(e -> {
-            try {
-                e.onNext(1);
-                Web3j web3 = Web3jFactory.build(
-                        new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
-                Credentials credentials = getEthAccountCredetials(account, password);
-                BLog.i(tag(), "load credential success");
-                e.onNext(2);
-                BigDecimal gasPriceWei = Convert.toWei(gasPrice, Convert.Unit.GWEI);
-                Function function = new Function(
-                        "trade",
-                        Arrays.<Type>asList(new Address(sendToken.getContractAddress()),
-                                new Uint256(CommonUtil.convertWeiFromEther(sendAmount)),
-                                new Address(receiveToken.getContractAddress()),
-                                new Address(account.getAddress()),
-                                new Uint256(CommonUtil.convertWeiFromEther(maxReceiveAmount)),
-                                new Uint256(minConversionRate),
-                                new Address("0x0000000000000000000000000000000000000000")),
-                        Collections.<TypeReference<?>>emptyList());
-                String encodedFunction = FunctionEncoder.encode(function);
-
-                String rateContractAddress = BrahmaConst.KYBER_MAIN_NETWORK_ADDRESS;
-                if (BrahmaConfig.getInstance().getNetworkUrl().equals(BrahmaConst.ROPSTEN_TEST_URL)) {
-                    rateContractAddress = BrahmaConst.KYBER_ROPSTEN_NETWORK_ADDRESS;
-                }
-
-                // if send ERC20 Token ,the send values is ZERO
-                BigInteger sendValue = CommonUtil.convertWeiFromEther(sendAmount);
-                if (!sendToken.getName().toLowerCase().equals(BrahmaConst.ETHEREUM)) {
-                    sendValue = BigInteger.ZERO;
-                }
-
-                RawTransactionManager txManager = new RawTransactionManager(web3, credentials);
-                EthSendTransaction transactionResponse = txManager.sendTransaction(
-                        gasPriceWei.toBigIntegerExact(), gasLimit, rateContractAddress, encodedFunction, sendValue);
-
-                if (transactionResponse.hasError()) {
-                    throw new RuntimeException("Error processing transaction request: "
-                            + transactionResponse.getError().getMessage());
-                }
-                String transactionHash = transactionResponse.getTransactionHash();
-                BLog.i(tag(), "===> transactionHash: " + transactionHash);
-                e.onNext(10);
-            } catch (UnreadableWalletException | IOException e1) {
                 e1.printStackTrace();
                 e.onError(e1);
             }
@@ -499,10 +329,6 @@ public class BrahmaWeb3jService extends BaseService{
             try {
                 Web3j web3 = Web3jFactory.build(
                         new HttpService(BrahmaConfig.getInstance().getNetworkUrl()));
-                ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-                WalletFile walletFile = objectMapper.readValue(BrahmaConst.DEFAULT_KEYSTORE, WalletFile.class);
-                Credentials credentials = Credentials.create(Wallet.decrypt("654321", walletFile));
-                TransactionManager transactionManager = new RawTransactionManager(web3, credentials);
 
                 String kyberContractAddress = BrahmaConst.KYBER_MAIN_NETWORK_ADDRESS;
                 if (BrahmaConfig.getInstance().getNetworkUrl().equals(BrahmaConst.ROPSTEN_TEST_URL)) {
@@ -517,7 +343,7 @@ public class BrahmaWeb3jService extends BaseService{
 
                 org.web3j.protocol.core.methods.response.EthCall ethCall = web3.ethCall(
                         Transaction.createEthCallTransaction(
-                                transactionManager.getFromAddress(), sendToken.getContractAddress(), encodedFunction),
+                                account.getAddress(), sendToken.getContractAddress(), encodedFunction),
                         DefaultBlockParameterName.LATEST)
                         .send();
 
@@ -527,7 +353,7 @@ public class BrahmaWeb3jService extends BaseService{
                 Uint256 allowAmount = (Uint256) values.get(0);
                 BLog.i(tag(), "the enabled is :" + allowAmount.getValue());
                 e.onNext(allowAmount.getValue());
-            } catch (IOException | CipherException e1) {
+            } catch (IOException e1) {
                 e1.printStackTrace();
                 e.onError(e1);
             }

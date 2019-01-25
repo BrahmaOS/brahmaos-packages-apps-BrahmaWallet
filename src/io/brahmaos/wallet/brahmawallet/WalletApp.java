@@ -25,6 +25,7 @@ import java.util.TimerTask;
 
 import brahmaos.content.BrahmaIntent;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
+import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.db.WalletDBMgr;
 import io.brahmaos.wallet.brahmawallet.receiver.BtcDownloadProgressReceiver;
 import io.brahmaos.wallet.brahmawallet.receiver.BtcTransactionReceiver;
@@ -33,6 +34,7 @@ import io.brahmaos.wallet.brahmawallet.repository.DataRepository;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.FingerActivity;
 import io.brahmaos.wallet.util.CommonUtil;
+import io.rayup.sdk.RayUpApp;
 
 /**
  * Android Application class. Used for accessing singletons.
@@ -40,7 +42,7 @@ import io.brahmaos.wallet.util.CommonUtil;
 public class WalletApp extends Application {
     private boolean firstOpenApp = true;
     private static Boolean isTimeOut = false;
-
+    private RayUpApp rayUpApp;
     private Timer timerTimeOut = new Timer();
     private TimerTask timerTask = new TimerTask() {
         @Override
@@ -58,7 +60,7 @@ public class WalletApp extends Application {
         MainService.getInstance().init(getApplicationContext());
         // init the config
         BrahmaConfig.getInstance().init(getApplicationContext());
-
+        rayUpApp = RayUpApp.initialize(BrahmaConst.rayupAccessKeyId, BrahmaConst.rayupAccessKeySecret);
         AppFrontBackHelper helper = new AppFrontBackHelper();
         helper.register(WalletApp.this, new AppFrontBackHelper.OnAppStatusListener() {
             @Override
@@ -99,6 +101,10 @@ public class WalletApp extends Application {
         BtcTxBroadcastCompleteReceiver btcTxBroadcastCompleteReceiver = new BtcTxBroadcastCompleteReceiver();
         IntentFilter txBroadcastCompleteIntentFilter = new IntentFilter(BrahmaIntent.ACTION_TRANSACTION_BROADCAST_COMPLETE);
         getApplicationContext().registerReceiver(btcTxBroadcastCompleteReceiver, txBroadcastCompleteIntentFilter);
+    }
+
+    public RayUpApp getRayUpApp() {
+        return rayUpApp;
     }
 
     public boolean isFirstOpenApp() {

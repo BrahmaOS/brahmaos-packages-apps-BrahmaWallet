@@ -180,66 +180,6 @@ public class BtcAccountDetailActivity extends BaseActivity {
         errorDialog.show();
     }
 
-    /**
-     * Verify the correctness of the password and
-     * allow the user to confirm again whether to delete the account
-     * @param password
-     */
-    private void prepareDeleteAccount(String password) {
-        progressDialog.show();
-        BrahmaWeb3jService.getInstance()
-                .getPrivateKeyByPassword(account.getFilename(), password)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
-                    @Override
-                    public void onNext(String privateKey) {
-                        if (progressDialog != null) {
-                            progressDialog.cancel();
-                        }
-                        if (privateKey != null && BrahmaWeb3jService.getInstance().isValidPrivateKey(privateKey)) {
-                            showConfirmDeleteAccountDialog();
-                        } else {
-                            showPasswordErrorDialog();;
-                        }
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                        e.printStackTrace();
-                        if (progressDialog != null) {
-                            progressDialog.cancel();
-                        }
-                        showPasswordErrorDialog();
-                    }
-
-                    @Override
-                    public void onCompleted() {
-
-                    }
-                });
-    }
-
-    private void showConfirmDeleteAccountDialog() {
-        AlertDialog deleteDialog = new AlertDialog.Builder(this)
-                .setMessage(R.string.delete_account_tip)
-                .setCancelable(false)
-                .setNegativeButton(R.string.cancel, ((dialog, which) -> {
-                    dialog.cancel();
-                }))
-                .setPositiveButton(R.string.delete, (dialog, which) -> {
-                    deleteAccount();
-                })
-                .create();
-        deleteDialog.show();
-    }
-
-    private void deleteAccount() {
-        if (progressDialog != null) {
-            progressDialog.show();
-        }
-    }
-
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         BLog.d(tag(), "requestCode: " + requestCode + "  ;resultCode" + resultCode);

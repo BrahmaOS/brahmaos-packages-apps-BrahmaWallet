@@ -30,15 +30,14 @@ import android.widget.TextView;
 
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.CipherException;
-import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.utils.Convert;
-import org.web3j.utils.Numeric;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.brahmaos.wallet.brahmawallet.BuildConfig;
 import io.brahmaos.wallet.brahmawallet.R;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
@@ -48,8 +47,10 @@ import io.brahmaos.wallet.brahmawallet.db.entity.TokenEntity;
 import io.brahmaos.wallet.brahmawallet.model.AccountAssets;
 import io.brahmaos.wallet.brahmawallet.model.KyberToken;
 import io.brahmaos.wallet.brahmawallet.service.BrahmaWeb3jService;
+import io.brahmaos.wallet.brahmawallet.service.EthAccountManager;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
+import io.brahmaos.wallet.brahmawallet.service.TokenService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
 import io.brahmaos.wallet.brahmawallet.ui.setting.HelpActivity;
 import io.brahmaos.wallet.brahmawallet.view.CustomProgressDialog;
@@ -156,14 +157,51 @@ public class InstantExchangeActivity extends BaseActivity {
         etGasLimit.setText(String.valueOf(BrahmaConst.DEFAULT_GAS_LIMIT));
         getGasPrice();
 
-        mAccounts = MainService.getInstance().getAllAccounts();
+        mAccounts = MainService.getInstance().getEthereumAccounts();
         if (mAccounts == null || mAccounts.size() <=0) {
             finish();
         }
         if (mAccount == null || mAccount.getAddress().length() == 0) {
             mAccount = mAccounts.get(0);
         }
-        tvChangeAccount.setVisibility(View.GONE);
+        if (mAccounts.size() > 1) {
+            tvChangeAccount.setVisibility(View.VISIBLE);
+        }
+        tvChangeAccount.setOnClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            View dialogView = getLayoutInflater().inflate(R.layout.dialog_account_list, null);
+            builder.setView(dialogView);
+            builder.setCancelable(true);
+            final AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+
+            LinearLayout layoutAccountList = dialogView.findViewById(R.id.layout_accounts);
+
+            for (final AccountEntity account : mAccounts) {
+                final AccountItemView accountItemView = new AccountItemView();
+                accountItemView.layoutAccountItem = LayoutInflater.from(this).inflate(R.layout.dialog_list_item_account, null);
+                accountItemView.ivAccountAvatar = accountItemView.layoutAccountItem.findViewById(R.id.iv_account_avatar);
+                accountItemView.tvAccountName = accountItemView.layoutAccountItem.findViewById(R.id.tv_account_name);
+                accountItemView.tvAccountAddress = accountItemView.layoutAccountItem.findViewById(R.id.tv_account_address);
+                accountItemView.layoutDivider = accountItemView.layoutAccountItem.findViewById(R.id.layout_divider);
+
+                accountItemView.tvAccountName.setText(account.getName());
+                ImageManager.showAccountAvatar(this, accountItemView.ivAccountAvatar, account);
+                accountItemView.tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
+
+                accountItemView.layoutAccountItem.setOnClickListener(v1 -> {
+                    alertDialog.cancel();
+                    mAccount = account;
+                    showAccountInfo(account);
+                });
+
+                if (mAccounts.indexOf(account) == mAccounts.size() - 1) {
+                    accountItemView.layoutDivider.setVisibility(View.GONE);
+                }
+
+                layoutAccountList.addView(accountItemView.layoutAccountItem);
+            }
+        });
 
         etSendTokenNum.addTextChangedListener(new TextWatcher() {
             @Override
@@ -240,18 +278,18 @@ public class InstantExchangeActivity extends BaseActivity {
         // init knc token
         kncToken.setSymbol("KNC");
         kncToken.setName("Kyber Network");
-        if (BrahmaConfig.getInstance().getNetworkUrl().equals(BrahmaConst.MAINNET_URL)) {
-            kncToken.setContractAddress("0xdd974d5c2e2928dea5f71b9825b8b646686bd200");
-        } else {
+        if (BuildConfig.TEST_FLAG) {
             kncToken.setContractAddress("0x4E470dc7321E84CA96FcAEDD0C8aBCebbAEB68C6");
+        } else {
+            kncToken.setContractAddress("0xdd974d5c2e2928dea5f71b9825b8b646686bd200");
         }
 
         initSendToken(ethToken);
         showAccountInfo(mAccount);
 
-        mKyberTokens = MainService.getInstance().getKyberTokenList();
+        mKyberTokens = TokenService.getInstance().getKyberTokenList();
         if (mKyberTokens.size() <= 0) {
-            MainService.getInstance().getKyberTokens()
+            TokenService.getInstance().getKyberTokens()
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(new Observer<List<KyberToken>>() {
@@ -264,7 +302,7 @@ public class InstantExchangeActivity extends BaseActivity {
                         }
                         @Override
                         public void onNext(List<KyberToken> apr) {
-                            mKyberTokens = MainService.getInstance().getKyberTokenList();
+                            mKyberTokens = TokenService.getInstance().getKyberTokenList();
                             copyKyberTokens();
                             sendChooseKyberTokens.add(0, ethToken);
                             sendTokensRecyclerView.getAdapter().notifyDataSetChanged();
@@ -300,7 +338,7 @@ public class InstantExchangeActivity extends BaseActivity {
             initReceiveToken(ethToken);
         }
         if (mAccount != null) {
-            showEre20TokenBalance();
+            showErc20TokenBalance();
         }
     }
 
@@ -317,7 +355,7 @@ public class InstantExchangeActivity extends BaseActivity {
         sendChooseKyberTokens.addAll(mKyberTokens);
     }
 
-    private void showEre20TokenBalance() {
+    private void showErc20TokenBalance() {
         if (sendToken.getName().toLowerCase().equals(BrahmaConst.ETHEREUM)) {
             layoutErc20Token.setVisibility(View.GONE);
         } else {
@@ -327,13 +365,14 @@ public class InstantExchangeActivity extends BaseActivity {
         TokenEntity tokenEntity = new TokenEntity();
         tokenEntity.setAddress(sendToken.getContractAddress());
         tokenEntity.setShortName(sendToken.getSymbol());
-        BrahmaWeb3jService.getInstance().getTokenBalance(mAccount, tokenEntity)
-                .observable()
+
+        EthAccountManager.getInstance().getEthereumBalanceByAddress(mAccount, tokenEntity)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<EthCall>() {
+                .subscribe(new Observer<AccountAssets>() {
                     @Override
-                    public void onCompleted() {
+                    public void onNext(AccountAssets accountAssets) {
+                        tvErc20TokenBalance.setText(String.valueOf(CommonUtil.getAccountFromWei(accountAssets.getBalance())));
                     }
 
                     @Override
@@ -342,28 +381,21 @@ public class InstantExchangeActivity extends BaseActivity {
                     }
 
                     @Override
-                    public void onNext(EthCall ethCall) {
-                        BigInteger balance = BigInteger.ZERO;
-                        if (ethCall != null && ethCall.getValue() != null) {
-                            BLog.i("view model", "the " + mAccount.getName() + "'s " +
-                                    tokenEntity.getShortName() + " balance is " + ethCall.getValue());
-                            balance = Numeric.decodeQuantity(ethCall.getValue());
-                        }
-                        tvErc20TokenBalance.setText(String.valueOf(CommonUtil.getAccountFromWei(balance)));
+                    public void onCompleted() {
                     }
                 });
     }
 
     public void getGasPrice() {
-        BrahmaWeb3jService.getInstance()
-                .getGasPrice()
+        EthAccountManager.getInstance()
+                .getEthereumGasPrice()
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<BigInteger>() {
+                .subscribe(new Observer<String>() {
                     @Override
-                    public void onNext(BigInteger gasPrice) {
-                        BLog.d(tag(), "the gas price is: " + String.valueOf(gasPrice));
-                        BigDecimal gasPriceGwei = Convert.fromWei(new BigDecimal(gasPrice), Convert.Unit.GWEI);
+                    public void onNext(String gasPrice) {
+                        BLog.d(tag(), "the gas price is: " + gasPrice);
+                        BigDecimal gasPriceGwei = new BigDecimal(gasPrice);
                         etGasPrice.setText(String.valueOf(gasPriceGwei));
                     }
 
@@ -388,24 +420,24 @@ public class InstantExchangeActivity extends BaseActivity {
             customProgressDialog.setProgressMessage(getString(R.string.progress_get_rate));
             customProgressDialog.show();
         }
-        BrahmaWeb3jService.getInstance()
+        EthAccountManager.getInstance()
                 .getExpectedRate(sendToken.getContractAddress(), receiveToken.getContractAddress())
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<List<Uint256>>() {
+                .subscribe(new Observer<List<String>>() {
                     @Override
-                    public void onNext(List<Uint256> expectedRates) {
+                    public void onNext(List<String> expectedRates) {
                         if (expectedRates != null && expectedRates.size() > 1) {
-                            Uint256 expectedRate = expectedRates.get(0);
-                            currentRate = expectedRate.getValue();
-                            BigDecimal readableRate = Convert.fromWei(new BigDecimal(expectedRate.getValue()), Convert.Unit.ETHER);
+                            String expectedRate = expectedRates.get(0);
+                            currentRate = new BigInteger(expectedRate);
+                            BigDecimal readableRate = Convert.fromWei(new BigDecimal(expectedRate), Convert.Unit.ETHER);
                             if (readableRate.compareTo(new BigDecimal(1)) > 0) {
                                 tvRateReceiveTokenNum.setText(String.valueOf(readableRate.setScale(4, BigDecimal.ROUND_HALF_UP)));
                             } else {
                                 tvRateReceiveTokenNum.setText(String.valueOf(readableRate.setScale(8, BigDecimal.ROUND_HALF_UP)));
                             }
-                            Uint256 slippageRateUint256 = expectedRates.get(1);
-                            slippageRate = slippageRateUint256.getValue();
+                            String slippageRateStr = expectedRates.get(1);
+                            slippageRate = new BigInteger(slippageRateStr);
 
                             try {
                                 BigDecimal sendNum = new BigDecimal(Float.parseFloat(etSendTokenNum.getText().toString()));
@@ -450,7 +482,7 @@ public class InstantExchangeActivity extends BaseActivity {
             tvAccountName.setText(account.getName());
             tvAccountAddress.setText(CommonUtil.generateSimpleAddress(account.getAddress()));
             showAccountBalance();
-            showEre20TokenBalance();
+            showErc20TokenBalance();
         }
     }
 
@@ -527,7 +559,7 @@ public class InstantExchangeActivity extends BaseActivity {
                 ImageManager.showTokenIcon(InstantExchangeActivity.this, holder.ivTokenAvatar, token.getName(), token.getContractAddress().toLowerCase());
             }
             holder.layoutKyberToken.setOnClickListener(v -> {
-                if (BrahmaConfig.getInstance().getNetworkUrl().equals(BrahmaConst.MAINNET_URL)) {
+                if (!BuildConfig.TEST_FLAG) {
                     initSendToken(token);
                 } else {
                     if (token.getSymbol().toLowerCase().equals("eth")) {
@@ -604,7 +636,7 @@ public class InstantExchangeActivity extends BaseActivity {
                 ImageManager.showTokenIcon(InstantExchangeActivity.this, holder.ivTokenAvatar, token.getName(), token.getContractAddress().toLowerCase());
             }
             holder.layoutKyberToken.setOnClickListener(v -> {
-                if (BrahmaConfig.getInstance().getNetworkUrl().equals(BrahmaConst.MAINNET_URL)) {
+                if (!BuildConfig.TEST_FLAG) {
                     initReceiveToken(token);
                 } else {
                     initReceiveToken(kncToken);
@@ -736,17 +768,18 @@ public class InstantExchangeActivity extends BaseActivity {
                         dialog.cancel();
                         // show transfer progress
                         layoutTransferStatus.setVisibility(View.VISIBLE);
+                        tvTransferStatus.setText(R.string.progress_send_request);
                         customStatusView.loadLoading();
                         String password = ((EditText) dialogView.findViewById(R.id.et_password)).getText().toString();
-                        BrahmaWeb3jService.getInstance().sendInstantExchangeTransfer(mAccount, sendToken,
+                        EthAccountManager.getInstance().sendInstantExchangeTransfer(mAccount, sendToken,
                                 receiveToken, new BigDecimal(srcAmount), new BigDecimal(maxDestAmount),
                                 slippageRate, password, gasPrice, gasLimit)
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Observer<Integer>() {
+                                .subscribe(new Observer<String>() {
                                     @Override
-                                    public void onNext(Integer flag) {
-                                        if (flag == 10) {
+                                    public void onNext(String hash) {
+                                        if (hash != null && hash.length() > 0) {
                                             tvTransferStatus.setText(R.string.progress_transfer_success);
                                             BLog.i(tag(), "the transfer success");
                                             customStatusView.loadSuccess();
@@ -756,10 +789,19 @@ public class InstantExchangeActivity extends BaseActivity {
                                                 setResult(Activity.RESULT_OK, intent);
                                                 finish();
                                             }, 1200);
-                                        } else if (flag == 1) {
-                                            tvTransferStatus.setText(R.string.progress_verify_account);
-                                        } else if (flag == 2) {
-                                            tvTransferStatus.setText(R.string.progress_send_request);
+                                        } else {
+                                            customStatusView.loadFailure();
+                                            tvTransferStatus.setText(R.string.progress_transfer_fail);
+                                            new Handler().postDelayed(() -> {
+                                                layoutTransferStatus.setVisibility(View.GONE);
+                                                int resId = R.string.tip_error_transfer;
+                                                new AlertDialog.Builder(InstantExchangeActivity.this)
+                                                        .setMessage(resId)
+                                                        .setNegativeButton(R.string.ok, (dialog1, which1) -> dialog1.cancel())
+                                                        .create().show();
+                                            }, 1500);
+
+                                            BLog.i(tag(), "the transfer failed");
                                         }
                                     }
 
@@ -800,7 +842,7 @@ public class InstantExchangeActivity extends BaseActivity {
             customProgressDialog.show();
         }
         String srcAmount = etSendTokenNum.getText().toString().trim();
-        BrahmaWeb3jService.getInstance()
+        EthAccountManager.getInstance()
                 .getContractAllowance(mAccount, sendToken)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -919,14 +961,14 @@ public class InstantExchangeActivity extends BaseActivity {
                         layoutTransferStatus.setVisibility(View.VISIBLE);
                         customStatusView.loadLoading();
                         String password = ((EditText) dialogView.findViewById(R.id.et_password)).getText().toString();
-                        BrahmaWeb3jService.getInstance().sendContractApproveTransfer(mAccount, sendToken,
+                        EthAccountManager.getInstance().sendContractApproveTransfer(mAccount, sendToken,
                                 new BigDecimal(approveAmount), password, gasPrice, gasLimit)
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new Observer<Integer>() {
+                                .subscribe(new Observer<String>() {
                                     @Override
-                                    public void onNext(Integer flag) {
-                                        if (flag == 10) {
+                                    public void onNext(String hash) {
+                                        if (hash != null && hash.length() > 0) {
                                             tvTransferStatus.setText(R.string.progress_transfer_success);
                                             BLog.i(tag(), "the transfer success");
                                             customStatusView.loadSuccess();
@@ -938,10 +980,17 @@ public class InstantExchangeActivity extends BaseActivity {
                                                         .setNegativeButton(R.string.ok, (dialog1, which1) -> dialog1.cancel())
                                                         .create().show();
                                             }, 1200);
-                                        } else if (flag == 1) {
-                                            tvTransferStatus.setText(R.string.progress_verify_account);
-                                        } else if (flag == 2) {
-                                            tvTransferStatus.setText(R.string.progress_send_request);
+                                        } else {
+                                            customStatusView.loadFailure();
+                                            tvTransferStatus.setText(R.string.progress_transfer_fail);
+                                            new Handler().postDelayed(() -> {
+                                                layoutTransferStatus.setVisibility(View.GONE);
+                                                int resId = R.string.tip_error_transfer;
+                                                new AlertDialog.Builder(InstantExchangeActivity.this)
+                                                        .setMessage(resId)
+                                                        .setNegativeButton(R.string.ok, (dialog1, which1) -> dialog1.cancel())
+                                                        .create().show();
+                                            }, 1500);
                                         }
                                     }
 

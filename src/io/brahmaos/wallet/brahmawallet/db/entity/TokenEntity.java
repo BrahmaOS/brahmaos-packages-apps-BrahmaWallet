@@ -25,16 +25,18 @@ public class TokenEntity implements Serializable{
 
     private String address;
     private String avatar;
+    private int code;
 
     public TokenEntity() {
     }
 
-    public TokenEntity(int id, String name, String shortName, String address, String avatar) {
+    public TokenEntity(int id, String name, String shortName, String address, String avatar, int code) {
         this.id = id;
         this.name = name;
         this.shortName = shortName;
         this.address = address;
         this.avatar = avatar;
+        this.code = code;
     }
 
     public int getId() {
@@ -77,6 +79,14 @@ public class TokenEntity implements Serializable{
         this.avatar = avatar;
     }
 
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
+    }
+
     @Override
     public String toString() {
         return "TokenEntity{" +
@@ -85,6 +95,7 @@ public class TokenEntity implements Serializable{
                 ", shortName='" + shortName + '\'' +
                 ", address='" + address + '\'' +
                 ", avatar='" + avatar + '\'' +
+                ", code=" + code +
                 '}';
     }
 }

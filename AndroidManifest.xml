@@ -161,6 +161,23 @@
             android:screenOrientation="portrait"/>
         <activity android:name=".ui.transfer.BtcTransferActivity"
             android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transaction.BtcTransactionsActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transaction.BtcTransactionDetailActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transaction.BlockchainTxDetailActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.setting.FeedbackActivity"
+            android:screenOrientation="portrait"/>
+        <activity android:name=".ui.transfer.QuickTransferActivity"
+            android:theme="@style/transparent_activity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="bitcoin" />
+                <data android:scheme="ethereum" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

@@ -19,5 +19,17 @@ public class IntentParam {
     public static final String PARAM_ETH_TX = "eth-transaction";
     public static final String PARAM_TOKEN_TX = "token-transaction";
     public static final String PARAM_TX_HASH = "tx-hash";
+    public static final String PARAM_BITCOIN_TRANSACTION = "bitcoin-transaction";
     public static final String PARAM_ETH_ADDRESS = "eth-account-address";
+
+    // brahma pay
+    public static final String PARAM_PAY_BLOCKCHAIN_TYPE = "blockchain";
+    public static final String PARAM_PAY_RECEIPT_ADDRESS = "receipt.address";
+    public static final String PARAM_PAY_TOKEN_ADDRESS = "token.address";
+    public static final String PARAM_PAY_SEND_VALUE = "send.value";
+    public static final String PARAM_PAY_REMARK = "remark";
+
+    public static final String PARAM_PAY_ERROR_CODE = "error.code";
+    public static final String PARAM_PAY_MSG = "msg";
+    public static final String PARAM_PAY_HASH = "hash";
 }

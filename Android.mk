@@ -4,7 +4,6 @@ LOCAL_PACKAGE_NAME := BrahmaWallet
 LOCAL_CERTIFICATE := platform
 LOCAL_PRIVILEGED_MODULE := true
 LOCAL_MODULE_TAGS := optional
-LOCAL_DEX_PREOPT := false
 
 #LOCAL_SDK_VERSION := current
 
@@ -90,6 +89,7 @@ LOCAL_STATIC_JAVA_LIBRARIES := \
         lifecycle-common \
         room-migration \
 	    slf4j-jdk14 \
+	    rayup-api \
 	    protobuf-java
 
 LOCAL_STATIC_JAVA_LIBRARIES += android-support-annotations

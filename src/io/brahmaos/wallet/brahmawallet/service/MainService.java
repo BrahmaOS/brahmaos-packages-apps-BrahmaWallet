@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,9 +66,6 @@ import io.brahmaos.wallet.brahmawallet.WalletApp;
 import io.brahmaos.wallet.brahmawallet.api.ApiConst;
 import io.brahmaos.wallet.brahmawallet.api.ApiRespResult;
 import io.brahmaos.wallet.brahmawallet.api.Networks;
-import io.brahmaos.wallet.brahmawallet.api.Web3jNetworks;
-import io.brahmaos.wallet.brahmawallet.api.Web3jRespResult;
-import io.brahmaos.wallet.brahmawallet.common.BrahmaConfig;
 import io.brahmaos.wallet.brahmawallet.common.BrahmaConst;
 import io.brahmaos.wallet.brahmawallet.db.TokenDao;
 import io.brahmaos.wallet.brahmawallet.db.entity.AccountEntity;
@@ -87,6 +85,11 @@ import rx.Observer;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
+
+import io.rayup.sdk.RayUpApp;
+import io.rayup.sdk.model.Coin;
+import io.rayup.sdk.model.CoinQuote;
+import io.rayup.sdk.model.EthToken;
 
 public class MainService extends BaseService{
     @Override
@@ -115,7 +118,6 @@ public class MainService extends BaseService{
 
     private List<CryptoCurrency> cryptoCurrencies = new ArrayList<>();
     private List<AccountAssets> accountAssetsList = new ArrayList<>();
-    private List<KyberToken> kyberTokenList = new ArrayList<>();
     private AccountEntity newMnemonicAccount = new AccountEntity();
     private List<AllTokenEntity> allTokenEntityList = new ArrayList<>();
     private List<AccountEntity> allAccounts = new ArrayList<>();
@@ -135,14 +137,6 @@ public class MainService extends BaseService{
 
     public void setAccountAssetsList(List<AccountAssets> accountAssetsList) {
         this.accountAssetsList = accountAssetsList;
-    }
-
-    public List<KyberToken> getKyberTokenList() {
-        return kyberTokenList;
-    }
-
-    public void setKyberTokenList(List<KyberToken> kyberTokenList) {
-        this.kyberTokenList = kyberTokenList;
     }
 
     public List<AllTokenEntity> getAllTokenEntityList() {
@@ -171,95 +165,69 @@ public class MainService extends BaseService{
         }
     }
 
-    public void loadAllTokens(List<AllTokenEntity> tokenEntities) {
-        allTokenEntityList = tokenEntities;
-    }
-
     /*
      * Fetch token price
      */
     public Observable<List<CryptoCurrency>> fetchCurrenciesFromNet(String symbols) {
         return Observable.create(e -> {
-            Networks.getInstance().getWalletApi()
-                    .getCryptoCurrencies(symbols)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<ApiRespResult>() {
+            RayUpApp app = ((WalletApp) context.getApplicationContext()).getRayUpApp();
+            Map<Integer, Map<String, CoinQuote>> coinQuotes = app.getLatestCoinQuotesByCodeV2(symbols, "USD,CNY");
+            Iterator<Map.Entry<Integer, Map<String, CoinQuote>>> iterator = coinQuotes.entrySet().iterator();
 
-                        @Override
-                        public void onCompleted() {
+            List<CryptoCurrency> currencies = new ArrayList<>();
+            while (iterator.hasNext()) {
+                Map.Entry<Integer, Map<String, CoinQuote>> entry = iterator.next();
+                CryptoCurrency cryptoCurrency = new CryptoCurrency();
+                Object coinCodeKey = entry.getKey();
+                int coinCode = Integer.parseInt((String)coinCodeKey);
+                if (coinCode == BrahmaConst.COIN_CODE_BRM) {
+                    cryptoCurrency.setName(BrahmaConst.COIN_BRM);
+                    cryptoCurrency.setSymbol(BrahmaConst.COIN_SYMBOL_BRM);
+                    cryptoCurrency.setTokenAddress(BrahmaConst.COIN_BRM_ADDRESS);
+                    if (entry.getValue().get("USD") != null) {
+                        cryptoCurrency.setPriceUsd((Double)((Map<String, Object>)entry.getValue().get("USD")).get("price"));
+                    }
+                    if (entry.getValue().get("CNY") != null) {
+                        cryptoCurrency.setPriceCny((Double)((Map<String, Object>)entry.getValue().get("CNY")).get("price"));
+                    }
+                } else if (coinCode == BrahmaConst.COIN_CODE_ETH) {
+                    cryptoCurrency.setName(BrahmaConst.COIN_ETH);
+                    cryptoCurrency.setSymbol(BrahmaConst.COIN_SYMBOL_ETH);
+                    cryptoCurrency.setTokenAddress(BrahmaConst.COIN_ETH_ADDRESS);
+                    if (entry.getValue().get("USD") != null) {
+                        cryptoCurrency.setPriceUsd((Double)((Map<String, Object>)entry.getValue().get("USD")).get("price"));
+                    }
+                    if (entry.getValue().get("CNY") != null) {
+                        cryptoCurrency.setPriceCny((Double)((Map<String, Object>)entry.getValue().get("CNY")).get("price"));
+                    }
+                } else if (coinCode == BrahmaConst.COIN_CODE_BTC) {
+                    cryptoCurrency.setName(BrahmaConst.COIN_BTC);
+                    cryptoCurrency.setSymbol(BrahmaConst.COIN_SYMBOL_BTC);
+                    cryptoCurrency.setTokenAddress("btc");
+                    if (entry.getValue().get("USD") != null) {
+                        cryptoCurrency.setPriceUsd((Double)((Map<String, Object>)entry.getValue().get("USD")).get("price"));
+                    }
+                    if (entry.getValue().get("CNY") != null) {
+                        cryptoCurrency.setPriceCny((Double)((Map<String, Object>)entry.getValue().get("CNY")).get("price"));
+                    }
+                } else {
+                    TokenEntity tokenEntity = TokenService.getInstance().queryChosenTokenByCode(coinCode);
+                    cryptoCurrency.setName(tokenEntity.getName());
+                    cryptoCurrency.setSymbol(tokenEntity.getShortName());
+                    cryptoCurrency.setTokenAddress(tokenEntity.getAddress());
+                    if (entry.getValue().get("USD") != null) {
+                        cryptoCurrency.setPriceUsd((Double)((Map<String, Object>)entry.getValue().get("USD")).get("price"));
+                    }
+                    if (entry.getValue().get("CNY") != null) {
+                        cryptoCurrency.setPriceCny((Double)((Map<String, Object>)entry.getValue().get("CNY")).get("price"));
+                    }
+                }
+                currencies.add(cryptoCurrency);
+            }
 
-                        }
-
-                        @Override
-                        public void onError(Throwable throwable) {
-                            throwable.printStackTrace();
-                            BLog.d("MainService", "fetch currency on error");
-                            e.onError(throwable);
-                        }
-
-                        @Override
-                        public void onNext(ApiRespResult apr) {
-                            if (apr.getResult() == 0 && apr.getData().containsKey(ApiConst.PARAM_QUOTES)) {
-                                ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-                                try {
-                                    List<CryptoCurrency> currencies = objectMapper.readValue(objectMapper.writeValueAsString(apr.getData().get(ApiConst.PARAM_QUOTES)), new TypeReference<List<CryptoCurrency>>() {});
-                                    loadCryptoCurrencies(currencies);
-                                    e.onNext(cryptoCurrencies);
-                                } catch (IOException e1) {
-                                    e1.printStackTrace();
-                                    e.onError(e1);
-                                }
-                            } else {
-                                BLog.e(tag(), "onError - " + apr.getResult());
-                                e.onNext(null);
-                            }
-                            e.onCompleted();
-                        }
-                    });
-        });
-    }
-
-    /*
-     * Get kyber tokens
-     */
-    public Observable<List<KyberToken>> getKyberTokens() {
-        return Observable.create(e -> {
-            Networks.getInstance().getKyperApi()
-                    .getKyberPairsTokens()
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Observer<LinkedHashMap<String, Object>>() {
-                        @Override
-                        public void onCompleted() {
-                            e.onCompleted();
-                        }
-
-                        @Override
-                        public void onError(Throwable throwable) {
-                            throwable.printStackTrace();
-                            e.onError(throwable);
-                        }
-
-                        @Override
-                        public void onNext(LinkedHashMap<String, Object> apr) {
-                            if (apr != null) {
-                                BLog.i(tag(), apr.toString());
-                                kyberTokenList.clear();
-                                ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
-                                for(Map.Entry<String, Object> entry: apr.entrySet()){
-                                    try {
-                                        KyberToken kyberToken = objectMapper.readValue(objectMapper.writeValueAsString(entry.getValue()), new TypeReference<KyberToken>() {});
-                                        kyberTokenList.add(kyberToken);
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                Collections.sort(kyberTokenList);
-                                e.onNext(kyberTokenList);
-                            }
-                        }
-                    });
+            loadCryptoCurrencies(currencies);
+            e.onNext(cryptoCurrencies);
+            e.onCompleted();
         });
     }
 

@@ -34,6 +34,7 @@ import io.brahmaos.wallet.brahmawallet.service.BtcAccountManager;
 import io.brahmaos.wallet.brahmawallet.service.ImageManager;
 import io.brahmaos.wallet.brahmawallet.service.MainService;
 import io.brahmaos.wallet.brahmawallet.ui.base.BaseActivity;
+import io.brahmaos.wallet.brahmawallet.ui.transaction.BtcTransactionsActivity;
 import io.brahmaos.wallet.brahmawallet.ui.transfer.BtcTransferActivity;
 import io.brahmaos.wallet.util.BLog;
 import io.brahmaos.wallet.util.CommonUtil;
@@ -266,9 +267,9 @@ public class BtcAccountAssetsActivity extends BaseActivity {
         });
 
         mLayoutTransaction.setOnClickListener(v -> {
-            /*Intent intent = new Intent(BtcAccountAssetsActivity.this, BtcTransactionsActivity.class);
+            Intent intent = new Intent(BtcAccountAssetsActivity.this, BtcTransactionsActivity.class);
             intent.putExtra(IntentParam.PARAM_ACCOUNT_INFO, account);
-            startActivity(intent);*/
+            startActivity(intent);
         });
     }
 
