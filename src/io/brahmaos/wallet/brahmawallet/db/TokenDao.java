@@ -279,6 +279,34 @@ public class TokenDao {
         return tokenEntity;
     }
 
+    /**
+     * Query chosen tokens
+     *
+     * @return all chosen tokens
+     */
+    public TokenEntity queryTokenByAddress(String address) {
+        SQLiteDatabase dbInstance = WalletDBMgr.getInstance().getDBInstance();
+        String sql = "select * from " + TABLE_G_ALL_TOKEN + " where lower(" + COL_G_CHOSEN_TOKEN_ADDRESS + ") = '" + address + "'";
+        Cursor cursor = dbInstance.rawQuery(sql, null);
+        BLog.d(tag(), "queryChosenTokenByAddress - " + sql);
+        TokenEntity tokenEntity = new TokenEntity();
+        while (cursor != null && cursor.moveToNext()) {
+            tokenEntity.setId(cursor.getInt(cursor.getColumnIndex(COL_G_CHOSEN_TOKEN_ID)));
+            tokenEntity.setName(cursor.getString(cursor.getColumnIndex(COL_G_CHOSEN_TOKEN_NAME)));
+            tokenEntity.setShortName(cursor.getString(cursor.getColumnIndex(COL_G_CHOSEN_TOKEN_SHORT_NAME)));
+            tokenEntity.setAddress(cursor.getString(cursor.getColumnIndex(COL_G_CHOSEN_TOKEN_ADDRESS)));
+            tokenEntity.setAvatar(cursor.getString(cursor.getColumnIndex(COL_G_CHOSEN_TOKEN_AVATAR)));
+            tokenEntity.setCode(cursor.getInt(cursor.getColumnIndex(COL_G_CHOSEN_TOKEN_CODE)));
+            break;
+        }
+
+        if (cursor != null && !cursor.isClosed()) {
+            cursor.close();
+        }
+
+        return tokenEntity;
+    }
+
     public void insertChosenToken(TokenEntity token) {
         if (token != null) {
             SQLiteDatabase dbInstance = WalletDBMgr.getInstance().getDBInstance();

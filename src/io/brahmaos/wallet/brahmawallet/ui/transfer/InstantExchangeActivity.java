@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -14,6 +15,7 @@ import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
@@ -32,6 +34,7 @@ import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.CipherException;
 import org.web3j.utils.Convert;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -80,9 +83,12 @@ public class InstantExchangeActivity extends BaseActivity {
     private TextView tvRateReceiveTokenName;
 
     private EditText etSendTokenNum;
+    private ImageView ivSendTokenIcon;
     private TextView tvSendTokenName;
     private LinearLayout layoutSendToken;
+
     private EditText etReceiveTokenNum;
+    private ImageView ivReceiveTokenIcon;
     private TextView tvReceiveTokenName;
     private LinearLayout layoutReceiveToken;
 
@@ -97,8 +103,10 @@ public class InstantExchangeActivity extends BaseActivity {
     private List<KyberToken> sendChooseKyberTokens = new ArrayList<>();
     private List<KyberToken> receiveChooseKyberTokens = new ArrayList<>();
     private BottomSheetDialog sendDialog;
+    private SearchView mSendSearchView;
     private RecyclerView sendTokensRecyclerView;
     private BottomSheetDialog receiveDialog;
+    private SearchView mReceiveSearchView;
     private RecyclerView receiveTokensRecyclerView;
 
     private BigInteger currentRate = BigInteger.ONE;
@@ -142,11 +150,15 @@ public class InstantExchangeActivity extends BaseActivity {
         tvRateReceiveTokenName = findViewById(R.id.tv_rate_receive_token_name);
 
         etSendTokenNum = findViewById(R.id.et_send_token_num);
+        ivSendTokenIcon = findViewById(R.id.iv_send_token_icon);
         tvSendTokenName = findViewById(R.id.tv_send_token_name);
         layoutSendToken = findViewById(R.id.layout_send_token);
+
         etReceiveTokenNum = findViewById(R.id.et_receive_token_num);
+        ivReceiveTokenIcon = findViewById(R.id.iv_receive_token_icon);
         tvReceiveTokenName = findViewById(R.id.tv_receive_token_name);
         layoutReceiveToken = findViewById(R.id.layout_receive_token);
+
         etGasPrice = findViewById(R.id.et_gas_price);
         etGasLimit = findViewById(R.id.et_gas_limit);
         btnShowTransfer = findViewById(R.id.btn_show_transfer_info);
@@ -247,22 +259,63 @@ public class InstantExchangeActivity extends BaseActivity {
         sendDialog = new BottomSheetDialog(this);
         View view = getLayoutInflater().inflate(R.layout.bottom_sheet_dialog_kyber_tokens, null);
         sendDialog.setContentView(view);
+        mSendSearchView = view.findViewById(R.id.view_search);
+        mSendSearchView.onActionViewExpanded();
+        mSendSearchView.setMaxWidth(30000);
+        mSendSearchView.setQueryHint(getString(R.string.choose_send_kyber_tokens));
+        setUnderLineTransparent(mSendSearchView);
         sendTokensRecyclerView = view.findViewById(R.id.tokens_recycler);
-        TextView tvTitleSendTokens = view.findViewById(R.id.title_kyber_tokens);
-        tvTitleSendTokens.setText(R.string.choose_send_kyber_tokens);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         sendTokensRecyclerView.setLayoutManager(layoutManager);
         sendTokensRecyclerView.setAdapter(new SendKyberTokenRecyclerAdapter());
+        mSendSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                sendChooseKyberTokens = searchKyberToken(mKyberTokens, query);
+                sendTokensRecyclerView.getAdapter().notifyDataSetChanged();
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (newText == null || newText.length() <= 0) {
+                    copySendKyberTokens();
+                    sendChooseKyberTokens.add(0, ethToken);
+                    sendTokensRecyclerView.getAdapter().notifyDataSetChanged();
+                }
+                return false;
+            }
+        });
 
         receiveDialog = new BottomSheetDialog(this);
         View receiveView = getLayoutInflater().inflate(R.layout.bottom_sheet_dialog_kyber_tokens, null);
         receiveDialog.setContentView(receiveView);
+        mReceiveSearchView = receiveView.findViewById(R.id.view_search);
+        mReceiveSearchView.onActionViewExpanded();
+        mReceiveSearchView.setMaxWidth(30000);
+        mReceiveSearchView.setQueryHint(getString(R.string.choose_receive_kyber_tokens));
+        setUnderLineTransparent(mReceiveSearchView);
         receiveTokensRecyclerView = receiveView.findViewById(R.id.tokens_recycler);
-        TextView tvTitleReceiveTokens = receiveView.findViewById(R.id.title_kyber_tokens);
-        tvTitleReceiveTokens.setText(R.string.choose_receive_kyber_tokens);
         LinearLayoutManager recevieLayoutManager = new LinearLayoutManager(this);
         receiveTokensRecyclerView.setLayoutManager(recevieLayoutManager);
         receiveTokensRecyclerView.setAdapter(new ReceiveKyberTokenRecyclerAdapter());
+        mReceiveSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                receiveChooseKyberTokens = searchKyberToken(mKyberTokens, query);
+                receiveTokensRecyclerView.getAdapter().notifyDataSetChanged();
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (newText == null || newText.length() <= 0) {
+                    copyReceiveKyberTokens();
+                    receiveTokensRecyclerView.getAdapter().notifyDataSetChanged();
+                }
+                return false;
+            }
+        });
 
         customProgressDialog = new CustomProgressDialog(this, R.style.CustomProgressDialogStyle, getString(R.string.progress_get_rate));
         customProgressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
@@ -331,6 +384,9 @@ public class InstantExchangeActivity extends BaseActivity {
     private void initSendToken(KyberToken token) {
         sendToken = token;
         tvSendTokenName.setText(token.getSymbol());
+        TokenEntity tokenEntity = TokenService.getInstance().queryTokenByAddress(token.getContractAddress().toLowerCase());
+        ImageManager.showTokenIcon(InstantExchangeActivity.this, ivSendTokenIcon,
+                token.getName(), tokenEntity.getAvatar());
         tvRateSendTokenName.setText(token.getSymbol());
         if (token.getSymbol().equals("ETH")) {
             initReceiveToken(kncToken);
@@ -345,9 +401,23 @@ public class InstantExchangeActivity extends BaseActivity {
     private void initReceiveToken(KyberToken token) {
         receiveToken = token;
         tvReceiveTokenName.setText(token.getSymbol());
+        TokenEntity tokenEntity = TokenService.getInstance().queryTokenByAddress(token.getContractAddress().toLowerCase());
+        ImageManager.showTokenIcon(InstantExchangeActivity.this, ivReceiveTokenIcon,
+                token.getName(), tokenEntity.getAvatar());
+
         tvRateReceiveTokenName.setText(token.getSymbol());
         tvRateReceiveTokenNum.setText("");
         getExpectedRate();
+    }
+
+    private void copySendKyberTokens() {
+        sendChooseKyberTokens = new ArrayList<>();
+        sendChooseKyberTokens.addAll(mKyberTokens);
+    }
+
+    private void copyReceiveKyberTokens() {
+        receiveChooseKyberTokens = new ArrayList<>();
+        receiveChooseKyberTokens.addAll(mKyberTokens);
     }
 
     private void copyKyberTokens() {
@@ -556,7 +626,8 @@ public class InstantExchangeActivity extends BaseActivity {
                 ImageManager.showTokenIcon(InstantExchangeActivity.this, holder.ivTokenAvatar, R.drawable.icon_eth);
             } else {
                 holder.tvTokenAddress.setVisibility(View.VISIBLE);
-                ImageManager.showTokenIcon(InstantExchangeActivity.this, holder.ivTokenAvatar, token.getName(), token.getContractAddress().toLowerCase());
+                TokenEntity tokenEntity = TokenService.getInstance().queryTokenByAddress(token.getContractAddress().toLowerCase());
+                ImageManager.showTokenIcon(InstantExchangeActivity.this, holder.ivTokenAvatar, token.getName(), tokenEntity.getAvatar());
             }
             holder.layoutKyberToken.setOnClickListener(v -> {
                 if (!BuildConfig.TEST_FLAG) {
@@ -633,7 +704,8 @@ public class InstantExchangeActivity extends BaseActivity {
                 ImageManager.showTokenIcon(InstantExchangeActivity.this, holder.ivTokenAvatar, R.drawable.icon_eth);
             } else {
                 holder.tvTokenAddress.setVisibility(View.VISIBLE);
-                ImageManager.showTokenIcon(InstantExchangeActivity.this, holder.ivTokenAvatar, token.getName(), token.getContractAddress().toLowerCase());
+                TokenEntity tokenEntity = TokenService.getInstance().queryTokenByAddress(token.getContractAddress().toLowerCase());
+                ImageManager.showTokenIcon(InstantExchangeActivity.this, holder.ivTokenAvatar, token.getName(), tokenEntity.getAvatar());
             }
             holder.layoutKyberToken.setOnClickListener(v -> {
                 if (!BuildConfig.TEST_FLAG) {
@@ -1024,4 +1096,28 @@ public class InstantExchangeActivity extends BaseActivity {
         });
     }
 
+    private void setUnderLineTransparent(SearchView searchView){
+        try {
+            Class<?> argClass = searchView.getClass();
+            Field ownField = argClass.getDeclaredField("mSearchPlate");
+            ownField.setAccessible(true);
+            View mView = (View) ownField.get(searchView);
+            mView.setBackgroundColor(Color.TRANSPARENT);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private List<KyberToken> searchKyberToken(List<KyberToken> kyberTokens, String searchText) {
+        List<KyberToken> kyberTokenList = new ArrayList<>();
+        for (KyberToken kyberToken : kyberTokens) {
+            if (kyberToken.getName().toLowerCase().matches("(.*)" + searchText.toLowerCase() + "(.*)") ||
+                    kyberToken.getSymbol().toLowerCase().matches("(.*)" + searchText.toLowerCase() + "(.*)")) {
+                kyberTokenList.add(kyberToken);
+            }
+        }
+        return kyberTokenList;
+    }
 }

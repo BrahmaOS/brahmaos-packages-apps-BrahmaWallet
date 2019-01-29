@@ -140,7 +140,7 @@ public class TokensActivity extends BaseActivity {
                 holder.tvTokenAddress.setVisibility(View.VISIBLE);
                 holder.switchToken.setVisibility(View.VISIBLE);
                 ImageManager.showTokenIcon(TokensActivity.this, holder.ivTokenAvatar,
-                        token.getName(), token.getAddress());
+                        token.getName(), token.getAvatar());
 
                 // Determine if the token is selected
                 boolean checked = false;

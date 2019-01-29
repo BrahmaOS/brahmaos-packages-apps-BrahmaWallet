@@ -286,7 +286,7 @@ public class EthAccountAssetsActivity extends BaseActivity {
             holder.tvTokenName.setText(tokenEntity.getShortName());
             holder.tvTokenFullName.setText(tokenEntity.getName());
             ImageManager.showTokenIcon(EthAccountAssetsActivity.this, holder.ivTokenIcon,
-                    tokenEntity.getName(), tokenEntity.getAddress());
+                    tokenEntity.getName(), tokenEntity.getAvatar());
             BigInteger tokenCount = BigInteger.ZERO;
             for (AccountAssets accountAssets : accountAssetsList) {
                 if (accountAssets.getTokenEntity().getAddress().equals(tokenEntity.getAddress()) &&

@@ -116,6 +116,10 @@ public class TokenService extends BaseService{
         return TokenDao.getInstance().queryChosenTokenByCode(code);
     }
 
+    public TokenEntity queryTokenByAddress(String address) {
+        return TokenDao.getInstance().queryTokenByAddress(address);
+    }
+
     /*
      * Get latest erc20 tokens
      */

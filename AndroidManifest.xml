@@ -170,12 +170,12 @@
         <activity android:name=".ui.setting.FeedbackActivity"
             android:screenOrientation="portrait"/>
         <activity android:name=".ui.transfer.QuickTransferActivity"
+            android:exported="true"
             android:theme="@style/transparent_activity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="bitcoin" />
-                <data android:scheme="ethereum" />
+                <data android:scheme="brahmapay" />
             </intent-filter>
         </activity>
     </application>
